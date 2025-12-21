@@ -13,9 +13,14 @@ import {
   Trash2,
   CheckCircle,
   Navigation,
-  XCircle
+  XCircle,
+  Star,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+import ReviewModal from './ReviewModal';
 
 interface DonationCardProps {
   donation: Donation;
@@ -41,8 +46,15 @@ const DonationCard: React.FC<DonationCardProps> = ({
   onAccept,
   onUpdateStatus
 }) => {
+  const { currentUser } = useAuth();
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   const getGoogleMapsLink = () => {
-    return `https://www.google.com/maps/dir/?api=1&destination=${donation.location.lat},${donation.location.lng}`;
+    // If lat/lng are valid (not 0,0), use them
+    if (donation.location.lat !== 0 || donation.location.lng !== 0) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${donation.location.lat},${donation.location.lng}`;
+    }
+    // Fallback to address search
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(donation.location.address)}`;
   };
 
   const { label, className } = statusConfig[donation.status];
@@ -60,14 +72,55 @@ const DonationCard: React.FC<DonationCardProps> = ({
         </Badge>
       </div>
 
-      {/* Image */}
-      {donation.imageUrl && (
-        <div className="mb-4 rounded-lg overflow-hidden">
+      {/* Image Carousel */}
+      {donation.imageUrls && donation.imageUrls.length > 0 && (
+        <div className="mb-4 rounded-lg overflow-hidden relative group h-48 bg-muted">
           <img
-            src={donation.imageUrl}
-            alt={donation.title}
-            className="w-full h-40 object-cover"
+            src={donation.imageUrls[currentImageIndex]}
+            alt={`${donation.title} - Image ${currentImageIndex + 1}`}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
+
+          {/* Navigation Overlay */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+
+          {/* Carousel Controls */}
+          {donation.imageUrls.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(prev => prev === 0 ? donation.imageUrls.length - 1 : prev - 1);
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(prev => prev === donation.imageUrls.length - 1 ? 0 : prev + 1);
+                }}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+
+              {/* Indicators */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {donation.imageUrls.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -118,6 +171,32 @@ const DonationCard: React.FC<DonationCardProps> = ({
           <p className="text-sm text-info font-medium">
             Accepted by: {donation.acceptedByName}
           </p>
+          {donation.acceptedByPhone && (
+            <div className="flex items-center gap-2 text-sm text-info/80 mt-1">
+              <Phone className="h-3 w-3" />
+              <a href={`tel:${donation.acceptedByPhone}`} className="hover:underline">
+                {donation.acceptedByPhone}
+              </a>
+            </div>
+          )}
+
+          {/* Review Button */}
+          {donation.status === 'accepted' && currentUser && (
+            <div className="mt-4">
+              <ReviewModal
+                reviewerId={currentUser.uid}
+                reviewerName={currentUser.displayName || 'User'}
+                targetUserId={donation.acceptedBy || ''}
+                donationId={donation.id}
+                trigger={
+                  <Button variant="outline" size="sm" className="w-full text-xs h-8 bg-background/50 hover:bg-background">
+                    <Star className="h-3 w-3 mr-2 text-yellow-500" />
+                    Rate NGO
+                  </Button>
+                }
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -192,7 +271,7 @@ const DonationCard: React.FC<DonationCardProps> = ({
           </>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

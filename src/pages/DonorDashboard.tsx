@@ -8,20 +8,37 @@ import DonationCard from '@/components/DonationCard';
 import { Button } from '@/components/ui/button';
 import { Plus, Package, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const DonorDashboard: React.FC = () => {
   const { currentUser, userData } = useAuth();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [greeting, setGreeting] = useState('');
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good Morning');
+    else if (hour < 18) setGreeting('Good Afternoon');
+    else setGreeting('Good Evening');
+  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
 
-    const unsubscribe = subscribeToDonorDonations(currentUser.uid, (fetchedDonations) => {
-      setDonations(fetchedDonations);
-      setLoading(false);
-    });
+    const unsubscribe = subscribeToDonorDonations(
+      currentUser.uid,
+      (fetchedDonations) => {
+        setDonations(fetchedDonations);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Subscription error:", err);
+        setError("Failed to load donations. " + err.message);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [currentUser]);
@@ -55,13 +72,13 @@ const DonorDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground mb-1">
-              Welcome, {userData?.displayName}!
+              {greeting}, {userData?.displayName}!
             </h1>
             <p className="text-muted-foreground">Manage your food donations</p>
           </div>
@@ -81,11 +98,11 @@ const DonorDashboard: React.FC = () => {
             { label: 'Accepted', value: stats.accepted, color: 'status-accepted' },
             { label: 'Completed', value: stats.completed, color: 'status-completed' },
           ].map((stat, index) => (
-            <div key={index} className="glass-card rounded-xl p-5">
+            <div key={index} className="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300">
               <p className="text-muted-foreground text-sm mb-1">{stat.label}</p>
-              <p className={`text-3xl font-bold ${stat.color.split(' ')[1] || 'text-foreground'}`}>
-                {stat.value}
-              </p>
+              <div className={`text-3xl font-bold ${stat.color.split(' ')[1] || 'text-foreground'}`}>
+                {loading ? <Skeleton className="h-8 w-12" /> : stat.value}
+              </div>
             </div>
           ))}
         </div>
@@ -100,9 +117,21 @@ const DonorDashboard: React.FC = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-            <p className="text-muted-foreground">Loading your donations...</p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="glass-card rounded-xl p-6 space-y-4">
+                <div className="flex justify-between">
+                  <Skeleton className="h-6 w-1/2" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+                <Skeleton className="h-40 w-full rounded-lg" />
+                <div className="grid grid-cols-2 gap-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
           </div>
         ) : donations.length === 0 ? (
           /* Empty State */

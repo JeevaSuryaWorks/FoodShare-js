@@ -57,12 +57,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       email: email,
       displayName: displayName,
       role: role,
-      phone: phone,
-      organizationName: organizationName,
+      phone: phone || null,
+      organizationName: organizationName || null,
       createdAt: new Date()
     };
 
-    await setDoc(doc(db, 'users', user.uid), userDoc);
+    // Remove undefined fields just in case types allow them but runtime is strict
+    const sanitizedUserDoc = Object.fromEntries(
+      Object.entries(userDoc).filter(([_, v]) => v !== undefined)
+    );
+
+    await setDoc(doc(db, 'users', user.uid), sanitizedUserDoc);
     setUserData(userDoc);
   };
 

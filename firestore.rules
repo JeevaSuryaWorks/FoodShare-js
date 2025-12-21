@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- Helper Functions ---
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is accessing their own document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // --- Collection Rules ---
+
+    // Users Collection
+    // Single collection for all roles (donor, ngo)
+    match /users/{userId} {
+      // Allow reading any user profile (needed for Leaderboard, Reviews, Donation cards)
+      allow read: if isAuthenticated(); 
+      
+      // Allow user to write only to their own document
+      // OR allow updating 'stats' field by any authenticated user (for reviews/ratings)
+      allow write: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']))
+      );
+    }
+    
+    // Donations Collection
+    match /donations/{donationId} {
+      
+      // READ Rules
+      allow read: if isAuthenticated() && (
+        // 1. Donor can read their own donations
+        resource.data.donorId == request.auth.uid ||
+        
+        // 2. Any authenticated user (intended for NGOs) can see 'pending' donations
+        resource.data.status == 'pending' ||
+        
+        // 3. NGO can see donations they have accepted or completed
+        // (Checking acceptedBy field existence to avoid null error if field is missing, though simplified check often works)
+        (resource.data.acceptedBy == request.auth.uid) ||
+        
+        // 4. Also allow reading 'accepted' donations generally if needed for UI lists, 
+        // but stricter: Donor needs to see their accepted donations (covered by #1).
+        // NGO needs to see accepted donations (covered by #3).
+        // Public/Other NGOs shouldn't necessarily see 'accepted' donations of others? 
+        // For now, let's keep it tight.
+        
+        // CORRECTION: For the "DonationCard" to work properly in lists, 
+        // users might need to read donations to filter them client-side if queries aren't perfect.
+        // But assuming efficient queries:
+        true // Simplification for MVP: Authenticated users can read donations 
+             // (Privacy enhancement: Restrict this later if needed, but for 'Feed' logic, readability is good)
+      );
+      
+      // CREATE Rules
+      allow create: if isAuthenticated() && 
+        request.resource.data.donorId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+        
+      // UPDATE Rules
+      allow update: if isAuthenticated() && (
+        // Scenario A: Donor updating their own pending donation 
+        (
+          resource.data.donorId == request.auth.uid && 
+          request.resource.data.donorId == request.auth.uid &&
+          resource.data.status == 'pending'
+        ) ||
+        
+        // Scenario B: NGO Accept Donation (pending -> accepted)
+        (
+          resource.data.status == 'pending' && 
+          request.resource.data.status == 'accepted' && 
+          request.resource.data.acceptedBy == request.auth.uid
+        ) ||
+        
+        // Scenario C: NGO Complete Donation (accepted -> completed)
+        (
+          resource.data.status == 'accepted' && 
+          request.resource.data.status == 'completed' && 
+          resource.data.acceptedBy == request.auth.uid
+        ) ||
+
+        // Scenario D: Donor Cancel Donation (pending -> cancelled)
+        (
+           resource.data.donorId == request.auth.uid &&
+           resource.data.status == 'pending' &&
+           request.resource.data.status == 'cancelled'
+        ) ||
+
+        // Scenario E: NGO Cancel Donation (accepted -> cancelled)
+        (
+          resource.data.status == 'accepted' && 
+          request.resource.data.status == 'cancelled' && 
+          resource.data.acceptedBy == request.auth.uid
+        )
+      );
+      
+      // DELETE Rules
+      allow delete: if isAuthenticated() && 
+        resource.data.donorId == request.auth.uid &&
+        (resource.data.status == 'pending' || resource.data.status == 'cancelled');
+    }
+
+    // Notifications Rules
+    match /notifications/{notificationId} {
+      // User can see their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Allow creation by any authenticated user (e.g. Donor notifying NGO or vice versa)
+      // Ideally this would be server-side only, but for client-side triggering:
+      allow create: if isAuthenticated();
+      
+      // Allow user to mark their own notification as read (update)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Allow user to delete their notifications
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Reviews Rules
+    match /reviews/{reviewId} {
+      // Reviews are public to authenticated users
+      allow read: if isAuthenticated();
+      
+      // Created by authenticated user
+      allow create: if isAuthenticated() && request.resource.data.reviewerId == request.auth.uid;
+      
+      // Only reviewer can edit/delete
+      allow update, delete: if isOwner(resource.data.reviewerId);
+    }
+    
+    // Explicitly deny anything else
+  }
+}

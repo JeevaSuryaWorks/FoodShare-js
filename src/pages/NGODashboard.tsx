@@ -10,8 +10,9 @@ import {
 import Navbar from '@/components/Navbar';
 import DonationCard from '@/components/DonationCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package, Clock, CheckCircle } from 'lucide-react';
+import { Loader2, Package, Clock, CheckCircle, Search, Filter } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 
 const NGODashboard: React.FC = () => {
   const { currentUser, userData } = useAuth();
@@ -19,18 +20,37 @@ const NGODashboard: React.FC = () => {
   const [myDonations, setMyDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('available');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (!currentUser) return;
 
-    const unsubAvailable = subscribeToAvailableDonations((donations) => {
-      setAvailableDonations(donations);
-      setLoading(false);
-    });
+    const unsubAvailable = subscribeToAvailableDonations(
+      (donations) => {
+        setAvailableDonations(donations);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Available donations error:", err);
+        toast({
+          title: "Error loading donations",
+          description: err.message,
+          variant: "destructive"
+        });
+        setLoading(false);
+      }
+    );
 
-    const unsubMy = subscribeToNGOAcceptedDonations(currentUser.uid, (donations) => {
-      setMyDonations(donations);
-    });
+    const unsubMy = subscribeToNGOAcceptedDonations(
+      currentUser.uid,
+      (donations) => {
+        setMyDonations(donations);
+      },
+      (err) => {
+        console.error("My pickups error:", err);
+        // Optional: toast or state for this specific error
+      }
+    );
 
     return () => {
       unsubAvailable();
@@ -45,7 +65,8 @@ const NGODashboard: React.FC = () => {
       await acceptDonation(
         donation.id,
         currentUser.uid,
-        userData.organizationName || userData.displayName
+        userData.organizationName || userData.displayName,
+        userData.phone
       );
       toast({
         title: 'Donation accepted!',
@@ -85,22 +106,42 @@ const NGODashboard: React.FC = () => {
     completed: myDonations.filter(d => d.status === 'completed').length,
   };
 
+  const filteredAvailable = availableDonations.filter(d =>
+    d.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    d.foodType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    d.location.address.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-foreground mb-1">
-            Welcome, {userData?.organizationName || userData?.displayName}!
-          </h1>
-          <p className="text-muted-foreground">Find and manage food donations</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground mb-1">
+              Welcome, {userData?.organizationName || userData?.displayName}!
+            </h1>
+            <p className="text-muted-foreground">Find and manage food donations for your community</p>
+          </div>
+
+          <div className="flex gap-2 w-full md:w-auto">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search food, location..."
+                className="pl-9 bg-muted/40"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="glass-card rounded-xl p-5">
+          <div className="glass-card rounded-xl p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Package className="h-5 w-5 text-primary" />
@@ -111,7 +152,7 @@ const NGODashboard: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="glass-card rounded-xl p-5">
+          <div className="glass-card rounded-xl p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-info/10 flex items-center justify-center">
                 <Clock className="h-5 w-5 text-info" />
@@ -122,7 +163,7 @@ const NGODashboard: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="glass-card rounded-xl p-5">
+          <div className="glass-card rounded-xl p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
                 <CheckCircle className="h-5 w-5 text-success" />
@@ -136,37 +177,39 @@ const NGODashboard: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="available" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Available ({stats.available})
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-muted/40 p-1 rounded-xl">
+            <TabsTrigger value="available" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Package className="h-4 w-4 mr-2" />
+              Available Donations
+              <span className="ml-2 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{stats.available}</span>
             </TabsTrigger>
-            <TabsTrigger value="my-pickups" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              My Pickups ({myDonations.length})
+            <TabsTrigger value="my-pickups" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Clock className="h-4 w-4 mr-2" />
+              My Pickups
+              <span className="ml-2 bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">{myDonations.length}</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="available">
+          <TabsContent value="available" className="animate-fade-in">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
                 <p className="text-muted-foreground">Loading available donations...</p>
               </div>
-            ) : availableDonations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
+            ) : filteredAvailable.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center glass-card rounded-xl">
                 <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-6">
                   <Package className="h-10 w-10 text-muted-foreground" />
                 </div>
-                <h2 className="text-xl font-semibold text-foreground mb-2">No donations available</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-2">No donations found</h2>
                 <p className="text-muted-foreground max-w-md">
-                  Check back later for new food donations in your area.
+                  {searchTerm ? 'Try adjusting your search terms.' : 'Check back later for new food donations in your area.'}
                 </p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {availableDonations.map((donation) => (
+                {filteredAvailable.map((donation) => (
                   <DonationCard
                     key={donation.id}
                     donation={donation}
@@ -178,9 +221,9 @@ const NGODashboard: React.FC = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="my-pickups">
+          <TabsContent value="my-pickups" className="animate-fade-in">
             {myDonations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="flex flex-col items-center justify-center py-20 text-center glass-card rounded-xl">
                 <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-6">
                   <Clock className="h-10 w-10 text-muted-foreground" />
                 </div>
