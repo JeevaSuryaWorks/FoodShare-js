@@ -18,23 +18,55 @@ export const subscribeToNotifications = (
     userId: string,
     onSuccess: (notifications: Notification[]) => void
 ) => {
-    const q = query(
+    // 1. Direct messages listener
+    const qDirect = query(
         collection(db, NOTIFICATIONS_COLLECTION),
         where('userId', '==', userId)
-        // Removed orderBy to avoid index issues initially, sort client-side
     );
 
-    return onSnapshot(q, (snapshot) => {
-        const notifications = snapshot.docs.map(doc => ({
+    // 2. Broadcast messages listener
+    const qBroadcast = query(
+        collection(db, NOTIFICATIONS_COLLECTION),
+        where('userId', '==', 'all')
+    );
+
+    let directNotifs: Notification[] = [];
+    let broadcastNotifs: Notification[] = [];
+
+    const mergeAndNotify = () => {
+        const all = [...directNotifs, ...broadcastNotifs].sort((a, b) =>
+            b.createdAt.getTime() - a.createdAt.getTime()
+        );
+        onSuccess(all);
+    };
+
+    const unsubDirect = onSnapshot(qDirect, (snapshot) => {
+        directNotifs = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
             createdAt: doc.data().createdAt?.toDate() || new Date()
         })) as Notification[];
-
-        // Client-side sort
-        notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        onSuccess(notifications);
+        mergeAndNotify();
+    }, (error) => {
+        console.warn("Direct notification listener error (might need index):", error);
+        // Fallback for index error: try without orderBy if needed, but 'desc' usually works if single field
     });
+
+    const unsubBroadcast = onSnapshot(qBroadcast, (snapshot) => {
+        broadcastNotifs = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate() || new Date()
+        })) as Notification[];
+        mergeAndNotify();
+    }, (error) => {
+        console.warn("Broadcast notification listener error:", error);
+    });
+
+    return () => {
+        unsubDirect();
+        unsubBroadcast();
+    };
 };
 
 export const markAsRead = async (notificationId: string) => {

@@ -342,7 +342,7 @@ const Signup: React.FC = () => {
                   I agree to the <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms & Conditions</Link>, <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>, and <Link to="/data-use" target="_blank" className="text-primary hover:underline">Data Usage Policy</Link>.
                 </label>
                 <p className="text-[0.8rem] text-muted-foreground">
-                  I consent to the collection of my data as outlined in the privacy policy.
+                  I consent to the collection of my data as outlined in the privacy policy and understand that my display name and impact stats will be publicly visible on the Leaderboard.
                 </p>
               </div>
             </div>

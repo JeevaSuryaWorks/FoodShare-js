@@ -49,16 +49,28 @@ const AddDonation: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<DonationFormData>({
-    title: '',
-    description: '',
-    foodType: '',
-    quantity: '',
-    expiryTime: '',
-    location: { lat: 0, lng: 0, address: '' },
-    imageUrls: [],
-    contactPhone: userData?.phone || '',
-    countryCode: '+91'
+  const [formData, setFormData] = useState<DonationFormData>(() => {
+    let initialPhone = userData?.phone || '';
+    let initialCode = '+91';
+
+    // Attempt to parse existing phone number
+    const foundCode = countryCodes.find(c => initialPhone.startsWith(c.code));
+    if (foundCode) {
+      initialCode = foundCode.code;
+      initialPhone = initialPhone.slice(foundCode.code.length);
+    }
+
+    return {
+      title: '',
+      description: '',
+      foodType: '',
+      quantity: '',
+      expiryTime: '',
+      location: { lat: 0, lng: 0, address: '' },
+      imageUrls: [],
+      contactPhone: initialPhone,
+      countryCode: initialCode
+    };
   });
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -181,6 +193,7 @@ const AddDonation: React.FC = () => {
         userData.phone,
         {
           ...formData,
+          contactPhone: `${formData.countryCode}${formData.contactPhone}`,
           imageUrls: uploadedUrls
         }
       );

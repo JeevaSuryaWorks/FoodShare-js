@@ -290,7 +290,7 @@ const Home: React.FC = () => {
 
           <div className="mb-12 inline-block px-6 py-3 rounded-full bg-primary/5 border border-primary/10">
             <p className="text-muted-foreground font-medium">
-              Developed under the esteemed guidance of <span className="text-primary font-bold">Mrs. M. Predheepa, M.E.</span>
+              Developed under the esteemed guidance of <span className="text-primary font-bold">Mrs. M. Predeepa, M.E.</span>
             </p>
           </div>
 

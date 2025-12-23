@@ -196,8 +196,8 @@ service cloud.firestore {
     // 📢 NOTIFICATIONS COLLECTION
     // ==================================================================================
     match /notifications/{notificationId} {
-      // Users can only read their own notifications
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can read own or broadcast. Admins can read all (for history).
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isAdmin());
       
       // Anyone can create a notification (system events, triggers from other users)
       // In a stricter app, this might be Cloud Function only, but for client-driven apps:

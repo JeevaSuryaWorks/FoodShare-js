@@ -2,13 +2,19 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { User, Donation } from '@/types';
+import { collection, query, where, getDocs, orderBy, doc, updateDoc, Timestamp, limit } from 'firebase/firestore';
+import { User, Donation, Notification } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShieldAlert, Users, Activity, Lock, Ban, CheckCircle } from 'lucide-react';
+import { ShieldAlert, Users, Activity, Lock, Ban, CheckCircle, Bell, Send } from 'lucide-react';
+import { sendNotification } from '@/services/notificationService';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,7 +34,15 @@ const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [volunteers, setVolunteers] = useState<User[]>([]);
     const [complaints, setComplaints] = useState<Complaint[]>([]);
+    const [notificationHistory, setNotificationHistory] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Notification State
+    const [notifTarget, setNotifTarget] = useState<'broadcast' | 'specific'>('broadcast');
+    const [selectedUserId, setSelectedUserId] = useState('');
+    const [notifTitle, setNotifTitle] = useState('');
+    const [notifMessage, setNotifMessage] = useState('');
+    const [notifType, setNotifType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
 
     // Strict Admin Access Check
     useEffect(() => {
@@ -49,12 +63,13 @@ const AdminDashboard: React.FC = () => {
         const fetchData = async () => {
             if (!currentUser) return;
             try {
-                // Fetch Volunteers
+                // Fetch All Users (for target selection)
                 const usersRef = collection(db, 'users');
-                const qVolunteers = query(usersRef, where('role', '==', 'volunteer'));
-                const volSnap = await getDocs(qVolunteers);
-                const volData = volSnap.docs.map(doc => ({ ...doc.data(), uid: doc.id } as User));
-                setVolunteers(volData);
+                // Remove specific role filter to allow messaging ANY user
+                const qUsers = query(usersRef, limit(100)); // Limit for safety in demo
+                const userSnap = await getDocs(qUsers);
+                const userData = userSnap.docs.map(doc => ({ ...doc.data(), uid: doc.id } as User));
+                setVolunteers(userData);
 
                 // Fetch Complaints
                 const complaintsRef = collection(db, 'complaints');
@@ -62,6 +77,13 @@ const AdminDashboard: React.FC = () => {
                 const compSnap = await getDocs(qComplaints);
                 const compData = compSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
                 setComplaints(compData);
+
+                // Fetch Notification History
+                const notifRef = collection(db, 'notifications');
+                const qNotifHistory = query(notifRef, orderBy('createdAt', 'desc'), limit(50));
+                const notifSnap = await getDocs(qNotifHistory);
+                const notifData = notifSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt?.toDate() } as Notification));
+                setNotificationHistory(notifData);
 
                 setLoading(false);
             } catch (error) {
@@ -121,6 +143,39 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
+    const handleSendNotification = async () => {
+        try {
+            const targetId = notifTarget === 'broadcast' ? 'all' : selectedUserId;
+            if (!targetId) {
+                toast.error("Please select a target user");
+                return;
+            }
+
+            await sendNotification(targetId, notifTitle, notifMessage, notifType);
+
+            toast.success("Notification Sent!");
+
+            // Optimistic Update
+            setNotificationHistory(prev => [{
+                id: 'temp-' + Date.now(),
+                userId: targetId,
+                title: notifTitle,
+                message: notifMessage,
+                type: notifType,
+                read: false,
+                createdAt: new Date()
+            } as Notification, ...prev]);
+
+            // Reset form
+            setNotifTitle('');
+            setNotifMessage('');
+            setSelectedUserId('');
+        } catch (error) {
+            console.error("Send notification error:", error);
+            toast.error("Failed to send notification");
+        }
+    };
+
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading Admin Panel...</div>;
 
     return (
@@ -137,9 +192,10 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 <Tabs defaultValue="complaints" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-8">
-                        <TabsTrigger value="complaints">Complaints</TabsTrigger>
-                        <TabsTrigger value="volunteers">Volunteer Monitor</TabsTrigger>
+                    <TabsList className="flex flex-col h-auto w-full sm:grid sm:grid-cols-3 max-w-[600px] mb-8 gap-2 bg-muted/50 p-1">
+                        <TabsTrigger value="complaints" className="w-full">Complaints</TabsTrigger>
+                        <TabsTrigger value="volunteers" className="w-full">Volunteer Monitor</TabsTrigger>
+                        <TabsTrigger value="notifications" className="w-full">Notifications</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="complaints" className="space-y-4">
@@ -281,6 +337,145 @@ const AdminDashboard: React.FC = () => {
                                 </div>
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="notifications">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Bell className="h-5 w-5 text-purple-500" />
+                                    Notification Center
+                                </CardTitle>
+                                <p className="text-sm text-muted-foreground">Send broadcasts or direct messages.</p>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Target Audience</Label>
+                                            <RadioGroup defaultValue="broadcast" value={notifTarget} onValueChange={(v) => setNotifTarget(v as any)} className="flex gap-4">
+                                                <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 hover:bg-muted/50 transition-colors">
+                                                    <RadioGroupItem value="broadcast" id="broadcast" />
+                                                    <Label htmlFor="broadcast" className="cursor-pointer">Broadcast (All Users)</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2 border p-3 rounded-lg flex-1 hover:bg-muted/50 transition-colors">
+                                                    <RadioGroupItem value="specific" id="specific" />
+                                                    <Label htmlFor="specific" className="cursor-pointer">Specific User</Label>
+                                                </div>
+                                            </RadioGroup>
+                                        </div>
+
+                                        {notifTarget === 'specific' && (
+                                            <div className="space-y-2 animate-fade-in-up">
+                                                <Label>Select User</Label>
+                                                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a user..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {volunteers.map(user => (
+                                                            <SelectItem key={user.uid} value={user.uid}>
+                                                                {user.displayName || 'Unknown User'} ({user.role || 'user'})
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-2">
+                                            <Label>Notification Type</Label>
+                                            <Select value={notifType} onValueChange={(v: any) => setNotifType(v)}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="info">Information (Blue)</SelectItem>
+                                                    <SelectItem value="success">Success (Green)</SelectItem>
+                                                    <SelectItem value="warning">Warning (Yellow)</SelectItem>
+                                                    <SelectItem value="error">Error (Red)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Title</Label>
+                                            <Input
+                                                placeholder="Notification Title"
+                                                value={notifTitle}
+                                                onChange={(e) => setNotifTitle(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Message</Label>
+                                            <Textarea
+                                                placeholder="Type your message here..."
+                                                className="min-h-[120px]"
+                                                value={notifMessage}
+                                                onChange={(e) => setNotifMessage(e.target.value)}
+                                            />
+                                        </div>
+                                        <Button
+                                            className="w-full"
+                                            onClick={handleSendNotification}
+                                            disabled={!notifTitle || !notifMessage || (notifTarget === 'specific' && !selectedUserId)}
+                                        >
+                                            <Send className="w-4 h-4 mr-2" />
+                                            Send Notification
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="mt-8">
+                            <h3 className="text-lg font-semibold mb-4">Sent History (Last 50)</h3>
+                            <Card>
+                                <CardContent className="p-0">
+                                    <div className="rounded-md border overflow-hidden">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-muted/50 text-muted-foreground font-medium">
+                                                <tr>
+                                                    <th className="p-4">Time</th>
+                                                    <th className="p-4">Target</th>
+                                                    <th className="p-4">Type</th>
+                                                    <th className="p-4">Content</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border">
+                                                {notificationHistory.map(notif => (
+                                                    <tr key={notif.id} className="hover:bg-muted/10">
+                                                        <td className="p-4 whitespace-nowrap text-gray-500">
+                                                            {notif.createdAt?.toLocaleString()}
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <Badge variant="outline">
+                                                                {notif.userId === 'all' ? 'Broadcast' : 'User: ' + notif.userId.slice(0, 6) + '...'}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <Badge className={
+                                                                notif.type === 'error' ? 'bg-red-500' :
+                                                                    notif.type === 'warning' ? 'bg-yellow-500' :
+                                                                        notif.type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+                                                            }>
+                                                                {notif.type}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="font-medium">{notif.title}</div>
+                                                            <div className="text-gray-500 truncate max-w-[300px]">{notif.message}</div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </TabsContent>
                 </Tabs>
             </main>

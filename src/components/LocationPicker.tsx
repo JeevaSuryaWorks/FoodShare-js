@@ -22,6 +22,8 @@ const defaultCenter = {
   lng: 77.209
 };
 
+const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places"];
+
 const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange, apiKey }) => {
   const [center, setCenter] = useState(value ? { lat: value.lat, lng: value.lng } : defaultCenter);
   const [marker, setMarker] = useState<{ lat: number; lng: number } | null>(
@@ -32,12 +34,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange, apiKey
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey,
-    libraries: ['places']
+    libraries // Use static constant to prevent reloading
   });
 
   const getAddressFromCoords = useCallback(async (lat: number, lng: number) => {
     if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') return;
-    
+
     try {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`
@@ -54,17 +56,17 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange, apiKey
 
   const handleMapClick = useCallback(async (e: google.maps.MapMouseEvent) => {
     if (!e.latLng) return;
-    
+
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
-    
+
     setMarker({ lat, lng });
     setLoading(true);
-    
+
     const addr = await getAddressFromCoords(lat, lng);
     setAddress(addr || '');
     setLoading(false);
-    
+
     onChange({
       lat,
       lng,
@@ -79,19 +81,19 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange, apiKey
     }
 
     setLoading(true);
-    
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-        
+
         setCenter({ lat, lng });
         setMarker({ lat, lng });
-        
+
         const addr = await getAddressFromCoords(lat, lng);
         setAddress(addr || '');
         setLoading(false);
-        
+
         onChange({
           lat,
           lng,

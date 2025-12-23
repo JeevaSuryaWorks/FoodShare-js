@@ -39,6 +39,9 @@ const callOpenRouter = async (model: string, messages: any[], responseFormat: an
 
     if (!response.ok) {
         const errText = await response.text();
+        if (errText.includes("data policy") || response.status === 404) {
+            throw new Error(`OpenRouter Error: Please enable 'Allow models to train on my prompts' in your OpenRouter settings to use free models. Details: ${errText}`);
+        }
         throw new Error(`OpenRouter (${model}) failed: ${response.statusText} - ${errText}`);
     }
     return response.json();
@@ -74,16 +77,21 @@ const callGroq = async (model: string, messages: any[], responseFormat: any = nu
 
 export const analyzeFoodImage = async (imageBase64: string): Promise<AIAnalysisResult> => {
     const prompt = `
-    Analyze this food image for donation safety. 
+    Analyze this image strictly for food donation safety.
+    
+    CRITICAL RULES:
+    1. If the image is NOT real food (e.g., logos, text, people, buildings, non-food objects), you MUST set "isEdible": false, "freshnessScore": 0, and add tag "NON_FOOD".
+    2. If the food appears rotten, moldy, or unsafe, set "isEdible": false.
+    3. If it is packaged food, check for visible damage (dents, seals broken).
+    
     Provide a JSON response with:
     {
       "freshnessScore": number (0-100),
       "isEdible": boolean,
-      "tags": string[] (e.g., "cooked", "raw", "fruits", "packaged"),
-      "safetyNotes": string (short observation),
-      "estimatedShelfLife": string (e.g., "24 hours")
+      "tags": string[] (e.g., "cooked", "raw", "packaged", "NON_FOOD", "fresh"),
+      "safetyNotes": string (short observation, e.g. "Detected logo only, not food" or "Fresh fruits visible"),
+      "estimatedShelfLife": string (e.g., "24 hours", "N/A")
     }
-    Be conservative. If unsafe, isEdible=false.
   `;
 
     const messages = [
@@ -96,21 +104,39 @@ export const analyzeFoodImage = async (imageBase64: string): Promise<AIAnalysisR
         }
     ];
 
-    // 1. Try OpenRouter (Free Gemini)
+    // 1. Try OpenRouter (Gemini 2.0 Flash - Best for Vision)
     try {
-        console.log("Attempting OpenRouter (Flash Exp Free)...");
+        if (!OPENROUTER_API_KEY) throw new Error("OpenRouter API Key is missing in .env");
+
+        console.log("Attempting OpenRouter (Gemini 2.0)...");
         const data = await callOpenRouter('google/gemini-2.0-flash-exp:free', messages, { type: "json_object" });
         return JSON.parse(data.choices[0].message.content);
-    } catch (orError) {
-        console.warn("OpenRouter failed, switching to Groq...", orError);
+    } catch (orError: any) {
+        console.warn("OpenRouter Gemini 2.0 failed:", orError.message);
+
+        // 1.1 Retry with Stable Gemini 1.5 Flash
+        try {
+            if (OPENROUTER_API_KEY) {
+                console.log("Attempting OpenRouter fallback (Gemini 1.5 Flash)...");
+                const data = await callOpenRouter('google/gemini-flash-1.5', messages, { type: "json_object" });
+                return JSON.parse(data.choices[0].message.content);
+            }
+        } catch (backupError: any) {
+            console.warn("OpenRouter fallback failed:", backupError.message);
+        }
+
+        console.warn("Switching to Groq...", orError);
     }
 
-    // 2. Try Groq (Llama 3.2 Vision)
+    // 2. Groq Vision (Decommissioned as of Dec 2024)
+    // The llama-3.2-90b-vision-preview model is no longer available.
+    // We skip this fallback to avoid 400 errors.
+    /*
     try {
         console.log("Attempting Groq (Llama 3.2 Vision)...");
-        // Check if user has Groq key
         if (GROQ_API_KEY) {
-            const data = await callGroq('llama-3.2-11b-vision-preview', messages, { type: "json_object" });
+            // Using 90b as 11b is decommissioned
+            const data = await callGroq('llama-3.2-90b-vision-preview', messages, { type: "json_object" });
             return JSON.parse(data.choices[0].message.content);
         } else {
             console.warn("Skipping Groq: No API Key found.");
@@ -118,13 +144,15 @@ export const analyzeFoodImage = async (imageBase64: string): Promise<AIAnalysisR
     } catch (groqError) {
         console.error("Groq failed:", groqError);
     }
+    */
 
-    // 3. Fallback
+    // 3. Safe Fallback (Fail Secure)
+    console.warn("AI Services unavailable. Defaulting to Manual Verification.");
     return {
-        freshnessScore: 85,
-        isEdible: true,
-        tags: ["AI_FALLBACK", "Manual Verify"],
-        safetyNotes: "AI Service unavailable. Please verify manually.",
+        freshnessScore: 0,
+        isEdible: false,
+        tags: ["Analysis Failed", "Manual Verify"],
+        safetyNotes: "AI Service unavailable. Manual verification required.",
         estimatedShelfLife: "Unknown"
     };
 };
