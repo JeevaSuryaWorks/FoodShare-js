@@ -27,6 +27,10 @@ export interface User {
   accountStatus?: 'active' | 'suspended' | 'banned'; // Added for Admin control
   warningCount?: number; // Added for Admin control
   suspendedUntil?: Timestamp; // Firestore Timestamp for suspension end
+  verificationStatus?: 'none' | 'pending' | 'verified' | 'rejected';
+  verificationDocumentUrl?: string; // URL to the uploaded verification document
+  verificationSubmittedAt?: Timestamp;
+  isVerified?: boolean; // easy helper flag
   createdAt: Date;
 }
 
@@ -59,6 +63,7 @@ export interface Donation {
   volunteerName?: string;
   volunteerPhone?: string;
   deliveryStatus?: 'available_for_pickup' | 'assigned' | 'picked_up' | 'delivered';
+  donorVerified?: boolean; // Added for verification badge
   createdAt: Date;
   updatedAt: Date;
 }

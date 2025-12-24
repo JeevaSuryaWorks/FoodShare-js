@@ -21,6 +21,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AddDonation from "./pages/AddDonation";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import VerificationRequest from "./pages/VerificationRequest";
 
 import Leaderboard from "./pages/Leaderboard";
 import RecipeGenerator from "./pages/RecipeGenerator";
@@ -96,6 +97,14 @@ const App = () => {
                   element={
                     <ProtectedRoute allowedRoles={['donor', 'ngo', 'volunteer']}>
                       <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/verify-request"
+                  element={
+                    <ProtectedRoute allowedRoles={['donor', 'ngo']}>
+                      <VerificationRequest />
                     </ProtectedRoute>
                   }
                 />

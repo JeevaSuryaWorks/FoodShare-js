@@ -34,7 +34,8 @@ export const createDonation = async (
   donorId: string,
   donorName: string,
   donorPhone: string | undefined, // from user profile
-  data: DonationFormData
+  data: DonationFormData,
+  isVerified: boolean = false // Added param
 ): Promise<string> => {
   const donationData = {
     ...data,
@@ -44,7 +45,8 @@ export const createDonation = async (
     // data.contactPhone and data.countryCode are already in 'data'
     status: 'pending' as DonationStatus,
     createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
+    updatedAt: Timestamp.now(),
+    donorVerified: isVerified // Save it
   };
 
   const docRef = await addDoc(collection(db, DONATIONS_COLLECTION), donationData);

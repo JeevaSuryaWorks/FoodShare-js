@@ -6,6 +6,7 @@ import { User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Medal, Award, Star, Crown, Heart } from 'lucide-react';
+import { VerifiedBadge } from '@/components/VerifiedBadge';
 
 const Leaderboard: React.FC = () => {
     const [topDonors, setTopDonors] = useState<User[]>([]);
@@ -93,8 +94,9 @@ const Leaderboard: React.FC = () => {
                                             <div className="inline-flex items-center justify-center bg-slate-300 text-slate-800 text-sm font-bold px-3 py-1 rounded-full mb-2 shadow-sm">
                                                 #2 Silver
                                             </div>
-                                            <h3 className="font-display font-bold text-lg truncate w-full mb-1">
+                                            <h3 className="font-display font-bold text-lg truncate w-full mb-1 flex items-center justify-center gap-1">
                                                 {podiumUsers[1].displayName}
+                                                {podiumUsers[1].isVerified && <VerifiedBadge className="h-4 w-4" />}
                                             </h3>
                                             <p className="text-2xl font-bold text-slate-600 dark:text-slate-400 mb-2">
                                                 {podiumUsers[1].stats?.totalDonations} <span className="text-xs font-normal opacity-70">Donations</span>
@@ -130,8 +132,9 @@ const Leaderboard: React.FC = () => {
                                                     <Trophy className="h-4 w-4 mr-1.5 fill-current" />
                                                     Champion
                                                 </div>
-                                                <h3 className="font-display font-bold text-2xl truncate w-full mb-2 text-foreground">
+                                                <h3 className="font-display font-bold text-2xl truncate w-full mb-2 text-foreground flex items-center justify-center gap-1">
                                                     {podiumUsers[0].displayName}
+                                                    {podiumUsers[0].isVerified && <VerifiedBadge className="h-6 w-6" />}
                                                 </h3>
                                                 <p className="text-4xl font-bold text-primary mb-3">
                                                     {podiumUsers[0].stats?.totalDonations} <span className="text-sm font-normal text-muted-foreground">Donations</span>
@@ -169,8 +172,9 @@ const Leaderboard: React.FC = () => {
                                             <div className="inline-flex items-center justify-center bg-orange-300 text-orange-900 text-sm font-bold px-3 py-1 rounded-full mb-2 shadow-sm">
                                                 #3 Bronze
                                             </div>
-                                            <h3 className="font-display font-bold text-lg truncate w-full mb-1">
+                                            <h3 className="font-display font-bold text-lg truncate w-full mb-1 flex items-center justify-center gap-1">
                                                 {podiumUsers[2].displayName}
+                                                {podiumUsers[2].isVerified && <VerifiedBadge className="h-4 w-4" />}
                                             </h3>
                                             <p className="text-2xl font-bold text-orange-800 dark:text-orange-300 mb-2">
                                                 {podiumUsers[2].stats?.totalDonations} <span className="text-xs font-normal opacity-70">Donations</span>
@@ -202,7 +206,10 @@ const Leaderboard: React.FC = () => {
 
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <h4 className="font-semibold truncate">{user.displayName}</h4>
+                                                <h4 className="font-semibold truncate flex items-center gap-1">
+                                                    {user.displayName}
+                                                    {user.isVerified && <VerifiedBadge className="h-4 w-4" />}
+                                                </h4>
                                                 {user.organizationName && (
                                                     <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground hidden sm:inline-block truncate max-w-[150px]">
                                                         {user.organizationName}

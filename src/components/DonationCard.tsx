@@ -28,6 +28,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import ReviewModal from './ReviewModal';
 import ChatWindow from '@/components/ChatWindow';
+import { VerifiedBadge } from './VerifiedBadge';
 
 interface DonationCardProps {
   donation: Donation;
@@ -202,7 +203,10 @@ const DonationCard: React.FC<DonationCardProps> = ({
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Donor</span>
-              <span className="text-sm font-medium truncate">{donation.donorName}</span>
+              <span className="text-sm font-medium truncate flex items-center gap-1">
+                {donation.donorName}
+                {donation.donorVerified && <VerifiedBadge className="h-4 w-4" showTooltip={false} />}
+              </span>
             </div>
           </div>
         </div>

@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShieldAlert, Users, Activity, Lock, Ban, CheckCircle, Bell, Send } from 'lucide-react';
+import { ShieldAlert, Users, Activity, Lock, Ban, CheckCircle, Bell, Send, Shield } from 'lucide-react';
 import { sendNotification } from '@/services/notificationService';
+import AdminVerificationPanel from '@/components/AdminVerificationPanel';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -192,11 +193,16 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 <Tabs defaultValue="complaints" className="w-full">
-                    <TabsList className="flex flex-col h-auto w-full sm:grid sm:grid-cols-3 max-w-[600px] mb-8 gap-2 bg-muted/50 p-1">
+                    <TabsList className="flex flex-col h-auto w-full sm:grid sm:grid-cols-4 max-w-[800px] mb-8 gap-2 bg-muted/50 p-1">
                         <TabsTrigger value="complaints" className="w-full">Complaints</TabsTrigger>
-                        <TabsTrigger value="volunteers" className="w-full">Volunteer Monitor</TabsTrigger>
+                        <TabsTrigger value="volunteers" className="w-full">Volunteers</TabsTrigger>
                         <TabsTrigger value="notifications" className="w-full">Notifications</TabsTrigger>
+                        <TabsTrigger value="verifications" className="w-full">Verifications</TabsTrigger>
                     </TabsList>
+
+                    <TabsContent value="verifications">
+                        <AdminVerificationPanel />
+                    </TabsContent>
 
                     <TabsContent value="complaints" className="space-y-4">
                         <h2 className="text-xl font-semibold mb-4">Active Reports</h2>

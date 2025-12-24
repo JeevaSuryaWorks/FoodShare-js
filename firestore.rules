@@ -106,7 +106,8 @@ service cloud.firestore {
       
       // 📖 READ: Broad access for functionality
       // BLOCKED for suspended/banned
-      allow read: if isAuthenticated() && isSafeUser();
+      // ALLOW public read for pending donations (for Home page map)
+      allow read: if (isAuthenticated() && isSafeUser()) || (resource.data.status == 'pending');
 
       // ➕ CREATE: Only valid donations by the donor
       allow create: if isAuthenticated() && isSafeUser()

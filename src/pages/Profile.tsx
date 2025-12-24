@@ -7,13 +7,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Camera, User, Phone, MapPin, Building2, Save, X, Edit2, Award, Heart, Users } from 'lucide-react';
+import { Loader2, Camera, User, Phone, MapPin, Building2, Save, X, Edit2, Award, Heart, Users, ShieldCheck } from 'lucide-react';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
+import { useNavigate } from 'react-router-dom';
+import { VerifiedBadge } from '@/components/VerifiedBadge';
+
 const Profile: React.FC = () => {
     const { currentUser, userData } = useAuth();
+    const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
+    // ... existing state ...
+
+    // ... inside component ...
+
+    // ... inside component ...
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({ totalDonations: 0, peopleFed: 0, karmaPoints: 0 });
 
@@ -129,11 +138,32 @@ const Profile: React.FC = () => {
                                 )}
                             </div>
 
-                            <h2 className="text-xl font-bold text-foreground">{displayName}</h2>
+                            <h2 className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
+                                {displayName}
+                                {userData.isVerified && <VerifiedBadge className="h-5 w-5" />}
+                            </h2>
                             <p className="text-muted-foreground text-sm mb-4 capitalize">{userData.role}</p>
 
-                            <div className="w-full pt-4 border-t border-border">
-                                <Button variant="outline" className="w-full mb-2" onClick={handlePasswordReset}>
+                            <div className="w-full pt-4 border-t border-border space-y-2">
+                                {!userData.isVerified && (userData.role as string) !== 'admin' && (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                                        onClick={() => navigate('/verify-request')}
+                                        disabled={userData.verificationStatus === 'pending'}
+                                    >
+                                        {userData.verificationStatus === 'pending' ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-3 w-3 animate-spin" /> Verification Pending
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ShieldCheck className="mr-2 h-3 w-3" /> Get Verified
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
+                                <Button variant="outline" className="w-full" onClick={handlePasswordReset}>
                                     Change Password
                                 </Button>
                             </div>
