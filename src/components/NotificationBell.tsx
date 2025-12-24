@@ -17,15 +17,40 @@ const NotificationBell: React.FC = () => {
     useEffect(() => {
         if (!currentUser) return;
         const unsubscribe = subscribeToNotifications(currentUser.uid, (data) => {
-            setNotifications(data);
-            setUnreadCount(data.filter(n => !n.read).length);
+            const readBroadcasts = JSON.parse(localStorage.getItem('readBroadcasts') || '[]');
+
+            // Merge server data with local read status for broadcasts
+            const processedData = data.map(n => {
+                if (n.userId === 'all' && readBroadcasts.includes(n.id)) {
+                    return { ...n, read: true };
+                }
+                return n;
+            });
+
+            setNotifications(processedData);
+            setUnreadCount(processedData.filter(n => !n.read).length);
         });
         return () => unsubscribe();
     }, [currentUser]);
 
-    const handleMarkRead = async (id: string, e: React.MouseEvent) => {
+    const handleMarkRead = async (notification: Notification, e: React.MouseEvent) => {
         e.stopPropagation();
-        await markAsRead(id);
+
+        if (notification.userId === 'all') {
+            // For broadcast messages, we can't update the server document (shared).
+            // Track "read" status locally.
+            const readBroadcasts = JSON.parse(localStorage.getItem('readBroadcasts') || '[]');
+            if (!readBroadcasts.includes(notification.id)) {
+                readBroadcasts.push(notification.id);
+                localStorage.setItem('readBroadcasts', JSON.stringify(readBroadcasts));
+            }
+            // Manually update local state to reflect change immediately
+            setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        } else {
+            // Normal user-specific notification
+            await markAsRead(notification.id);
+        }
     };
 
     return (
@@ -80,7 +105,7 @@ const NotificationBell: React.FC = () => {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-6 w-6 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={(e) => handleMarkRead(notif.id, e)}
+                                                onClick={(e) => handleMarkRead(notif, e)}
                                                 title="Mark as read"
                                             >
                                                 <Check className="h-3 w-3" />
