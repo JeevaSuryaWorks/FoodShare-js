@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type UserRole = 'donor' | 'ngo';
+export type UserRole = 'donor' | 'ngo' | 'admin';
 
 export type DonationStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
 

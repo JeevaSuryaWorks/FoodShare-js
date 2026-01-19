@@ -41,7 +41,7 @@ const AdminDashboard: React.FC = () => {
         // In production, use Custom Claims or a specific role in DB.
         // For this demo as requested: admin@feedreach / JS12345678
         // We check the email.
-        const isAdmin = currentUser?.email === 'admin@foodshare.com' || currentUser?.email === 'admin@feedreach.com' || currentUser?.email === 'admin@timechain.com'; // Allowing fallback
+        const isAdmin = currentUser?.email === 'admin@foodshare.com' || currentUser?.email === 'admin@feedreach.com' || currentUser?.email === 'admin@timechain.com' || currentUser?.email === 'jlteam@gmail.com'; // Allowing fallback
 
         if (!currentUser || !isAdmin) {
             toast.error("Unauthorized Access. Admins only.");

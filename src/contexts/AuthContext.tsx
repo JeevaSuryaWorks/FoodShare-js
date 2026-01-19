@@ -109,10 +109,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Use onSnapshot for realtime updates
         const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
-            setUserData(docSnap.data() as User);
+            const data = docSnap.data() as User;
+
+            // Hardcoded Admin Logic for Demo/Batch Verification
+            const adminEmails = ['admin@feedreach.com', 'admin@foodshare.com', 'admin@timechain.com', 'jlteam@gmail.com'];
+            if (adminEmails.includes(user.email || '')) {
+              data.role = 'admin';
+            }
+
+            setUserData(data);
           } else {
-            // Handle case where auth exists but firestore doc doesn't (rare but possible)
-            setUserData(null);
+            // Check if it's an admin signing in without a user doc (highly unlikely but possible)
+            const adminEmails = ['admin@feedreach.com', 'admin@foodshare.com', 'admin@timechain.com', 'jlteam@gmail.com'];
+            if (adminEmails.includes(user.email || '')) {
+              setUserData({
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName || 'Admin',
+                role: 'admin',
+                createdAt: new Date()
+              } as User);
+            } else {
+              setUserData(null);
+            }
           }
           setLoading(false);
         }, (error) => {
