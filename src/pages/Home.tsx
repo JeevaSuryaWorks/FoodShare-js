@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Leaf, Heart, Users, MapPin, ArrowRight, Sparkles, Code2, Crown } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import DonationMap from '@/components/DonationMap';
 import { Donation } from '@/types';
 import { getAvailableDonations } from '@/services/donationService';
@@ -11,6 +12,7 @@ import Footer from '@/components/Footer';
 
 const Home: React.FC = () => {
   const { currentUser, userData, loading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [donations, setDonations] = React.useState<Donation[]>([]);
 
@@ -38,13 +40,13 @@ const Home: React.FC = () => {
           <div className="max-w-5xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/50 backdrop-blur border border-primary/20 text-primary text-sm font-semibold mb-10 animate-fade-up shadow-sm">
               <Sparkles className="h-4 w-4 fill-primary" />
-              <span className="tracking-wide uppercase text-xs">Reducing Food Waste Together</span>
+              <span className="tracking-wide uppercase text-xs">{t('common.appName')}</span>
             </div>
 
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-extrabold text-foreground mb-8 animate-fade-up leading-[1.1] tracking-tight" style={{ animationDelay: '0.1s' }}>
-              Share Food,{' '}
+              {t('home.hero.title').split(',')[0]},
               <span className="gradient-text relative inline-block pb-2">
-                Share Hope
+                {t('home.hero.title').split(',')[1] || ' Share Hope'}
                 <svg className="absolute w-full h-3 -bottom-1 left-0 text-primary/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                   <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="none" />
                 </svg>
@@ -52,8 +54,7 @@ const Home: React.FC = () => {
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto animate-fade-up leading-relaxed" style={{ animationDelay: '0.2s' }}>
-              Connect surplus food from <span className="font-semibold text-foreground">restaurants</span>, <span className="font-semibold text-foreground">events</span>, and <span className="font-semibold text-foreground">homes</span> with NGOs
-              serving those in need. Eliminate hunger, reduce waste.
+              {t('home.hero.subtitle')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-up" style={{ animationDelay: '0.3s' }}>
@@ -100,10 +101,10 @@ const Home: React.FC = () => {
         <div className="flex animate-scroll text-sm text-primary-foreground font-medium">
           {[1, 2, 3, 4].map((group) => (
             <div key={group} className="flex items-center gap-8 mx-4">
-              <span className="flex items-center gap-2"><Sparkles className="h-3 w-3" /> 1,200+ meals saved this week</span>
-              <span className="flex items-center gap-2">• New partner: Community Kitchen added</span>
-              <span className="flex items-center gap-2"><Heart className="h-3 w-3" /> Top Donor: Green Eats Restaurant</span>
-              <span className="flex items-center gap-2">• 50kg surplus food distributed today</span>
+              <span className="flex items-center gap-2"><Sparkles className="h-3 w-3" /> {t('home.impactTicker.mealsSaved')}</span>
+              <span className="flex items-center gap-2">• {t('home.impactTicker.newPartner')}</span>
+              <span className="flex items-center gap-2"><Heart className="h-3 w-3" /> {t('home.impactTicker.topDonor')}</span>
+              <span className="flex items-center gap-2">• {t('home.impactTicker.distributed')}</span>
             </div>
           ))}
         </div>
@@ -113,10 +114,10 @@ const Home: React.FC = () => {
       <section className="py-16 container mx-auto px-4">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-display font-bold text-foreground mb-4">
-            Live Donations Near You
+            {t('home.nearYou.title')}
           </h2>
           <p className="text-muted-foreground">
-            Explore active food donations in your area and help bridge the gap.
+            {t('home.nearYou.subtitle')}
           </p>
         </div>
         <div className="max-w-5xl mx-auto animate-fade-up">
@@ -130,10 +131,10 @@ const Home: React.FC = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { value: '12,543', label: 'Meals Shared', icon: Heart, color: 'text-rose-500' },
-              { value: '892', label: 'Active Donors', icon: Users, color: 'text-indigo-500' },
-              { value: '143', label: 'NGO Partners', icon: Leaf, color: 'text-emerald-500' },
-              { value: '28', label: 'Cities Covered', icon: MapPin, color: 'text-amber-500' }
+              { value: '12,543', label: t('home.stats.mealsShared'), icon: Heart, color: 'text-rose-500' },
+              { value: '892', label: t('home.stats.activeDonors'), icon: Users, color: 'text-indigo-500' },
+              { value: '143', label: t('home.stats.ngoPartners'), icon: Leaf, color: 'text-emerald-500' },
+              { value: '28', label: t('home.stats.citiesCovered'), icon: MapPin, color: 'text-amber-500' }
             ].map((stat, index) => (
               <div key={index} className="text-center group cursor-default">
                 <div className={`inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-white shadow-sm mb-4 transform transition-transform group-hover:scale-110 duration-300 ${stat.color}`}>
@@ -163,29 +164,29 @@ const Home: React.FC = () => {
             {[
               {
                 step: '01',
-                title: 'List Surplus',
-                description: 'Donors post food details and location in seconds.',
+                title: t('home.howItWorksSec.steps.step1.title'),
+                description: t('home.howItWorksSec.steps.step1.desc'),
                 icon: Sparkles,
                 color: 'bg-primary/10 text-primary'
               },
               {
                 step: '02',
-                title: 'NGOs Accept',
-                description: 'Local NGOs get notified and claim the donation.',
+                title: t('home.howItWorksSec.steps.step2.title'),
+                description: t('home.howItWorksSec.steps.step2.desc'),
                 icon: Heart,
                 color: 'bg-rose-500/10 text-rose-600'
               },
               {
                 step: '03',
-                title: 'NGO Pickup',
-                description: 'NGOs organize pickup and transport the food safely.',
+                title: t('home.howItWorksSec.steps.step3.title'),
+                description: t('home.howItWorksSec.steps.step3.desc'),
                 icon: MapPin,
                 color: 'bg-amber-500/10 text-amber-600'
               },
               {
                 step: '04',
-                title: 'Impact Created',
-                description: 'Food feeds the hungry, not the landfill.',
+                title: t('home.howItWorksSec.steps.step4.title'),
+                description: t('home.howItWorksSec.steps.step4.desc'),
                 icon: Leaf,
                 color: 'bg-emerald-500/10 text-emerald-600'
               }
@@ -266,15 +267,14 @@ const Home: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-6">
-              Ready to Make a Difference?
+              {t('home.cta.title')}
             </h2>
             <p className="text-muted-foreground mb-8 text-lg">
-              Whether you're a restaurant with extra food or an NGO looking to serve your community,
-              join FeedReach today and be part of the solution.
+              {t('home.cta.subtitle')}
             </p>
             <Link to="/signup">
               <Button variant="hero" size="xl">
-                Join FeedReach Now
+                {t('home.cta.button')}
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </Link>

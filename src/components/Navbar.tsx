@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Leaf, LogOut, User, Menu, X, ChevronDown, MessageSquare } from 'lucide-react';
+import { Leaf, LogOut, User, Menu, X, ChevronDown, MessageSquare, Languages, Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import NotificationBell from './NotificationBell';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebase';
@@ -18,6 +19,7 @@ import {
 
 const Navbar: React.FC = () => {
   const { currentUser, userData, logout, loading } = useAuth();
+  const { t, i18n } = useTranslation();
   validateSystemIntegrity();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,6 +43,12 @@ const Navbar: React.FC = () => {
       console.error('Logout error:', error);
     }
   };
+
+  const toggleLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+  };
+
+  const currentLanguageName = i18n.language === 'ta' ? 'தமிழ்' : 'English';
 
   const getDashboardLink = () => {
     if (!userData) return '/';
@@ -115,8 +123,8 @@ const Navbar: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
-            <NavLink to="/">Home</NavLink>
-            <NavLink to="/recipes">Smart Recipes</NavLink>
+            <NavLink to="/">{t('common.home')}</NavLink>
+            <NavLink to="/recipes">{t('common.recipes')}</NavLink>
 
             {loading ? (
               <div className="flex items-center gap-2">
@@ -127,19 +135,24 @@ const Navbar: React.FC = () => {
               userData ? (
                 <>
                   <NavLink to={getDashboardLink()}>
-                    Dashboard
+                    {t('common.dashboard')}
                     {unreadCount > 0 && (
                       <span className="ml-1.5 inline-flex h-2 w-2 rounded-full bg-red-500 animate-pulse" title={`${unreadCount} unread messages`} />
                     )}
                   </NavLink>
                   {userData.role === 'donor' && (
-                    <NavLink to="/donor/add-donation">Add Donation</NavLink>
+                    <NavLink to="/donor/add-donation">{t('common.donate')}</NavLink>
                   )}
 
                   <div className="w-px h-6 bg-border mx-2" />
 
-                  {/* Notification Bell */}
-                  <NotificationBell />
+                  {/* Notification Center Link */}
+                  <Link to="/notifications" className="relative group p-2 rounded-full hover:bg-muted/50 transition-colors">
+                    <Bell className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary ring-2 ring-background animate-pulse" />
+                    )}
+                  </Link>
 
                   {/* User Dropdown */}
                   <DropdownMenu>
@@ -200,15 +213,34 @@ const Navbar: React.FC = () => {
             ) : (
               <div className="flex items-center gap-3 ml-4">
                 <Link to="/login">
-                  <Button variant="ghost" className="rounded-full">Sign In</Button>
+                  <Button variant="ghost" className="rounded-full">{t('common.login')}</Button>
                 </Link>
                 <Link to="/signup">
                   <Button variant="hero" className="rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30">
-                    Get Started
+                    {t('common.signup')}
                   </Button>
                 </Link>
               </div>
             )}
+
+            <div className="w-px h-6 bg-border mx-2" />
+
+            {/* Language Switcher */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                  <Languages className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 p-2">
+                <DropdownMenuItem onClick={() => toggleLanguage('en')} className={cn("cursor-pointer", i18n.language === 'en' && "bg-primary/10 text-primary")}>
+                  English
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toggleLanguage('ta')} className={cn("cursor-pointer", i18n.language === 'ta' && "bg-primary/10 text-primary")}>
+                  தமிழ் (Tamil)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Mobile Menu Button */}
@@ -229,19 +261,22 @@ const Navbar: React.FC = () => {
           <div className="md:hidden absolute top-16 left-0 w-full bg-background/95 backdrop-blur-xl border-b border-border shadow-2xl p-4 animate-fade-up">
             <div className="flex flex-col gap-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium">
-                Home
+                {t('common.home')}
               </Link>
               <Link to="/recipes" onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium">
-                Smart Recipes
+                {t('common.recipes')}
               </Link>
 
               {currentUser && userData ? (
                 <>
-                  <Link to={getDashboardLink()} onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium flex items-center justify-between">
-                    Dashboard
+                  <Link to="/notifications" onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium flex items-center justify-between">
+                    Notifications
                     {unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{unreadCount} new</span>
+                      <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">{unreadCount} new</span>
                     )}
+                  </Link>
+                  <Link to={getDashboardLink()} onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium">
+                    Dashboard
                   </Link>
                   {userData.role === 'donor' && (
                     <Link to="/donor/add-donation" onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium">
@@ -260,13 +295,36 @@ const Navbar: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-2 gap-3 mt-2">
                   <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full justify-center">Sign In</Button>
+                    <Button variant="outline" className="w-full justify-center">{t('common.login')}</Button>
                   </Link>
                   <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="hero" className="w-full justify-center">Get Started</Button>
+                    <Button variant="hero" className="w-full justify-center">{t('common.signup')}</Button>
                   </Link>
                 </div>
               )}
+
+              <div className="h-px bg-border my-2" />
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-sm font-medium text-muted-foreground">{t('common.language')}</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant={i18n.language === 'en' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => toggleLanguage('en')}
+                    className="h-8 text-xs"
+                  >
+                    English
+                  </Button>
+                  <Button
+                    variant={i18n.language === 'ta' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => toggleLanguage('ta')}
+                    className="h-8 text-xs"
+                  >
+                    தமிழ்
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         )}

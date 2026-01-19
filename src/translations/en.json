@@ -1,0 +1,69 @@
+{
+    "common": {
+        "appName": "FeedReach",
+        "home": "Home",
+        "recipes": "Smart Recipes",
+        "donate": "Donate Food",
+        "request": "Request Food",
+        "impact": "Our Impact",
+        "contact": "Contact Us",
+        "login": "Login",
+        "signup": "Sign Up",
+        "logout": "Logout",
+        "dashboard": "Dashboard"
+    },
+    "home": {
+        "hero": {
+            "title": "Bridging the Gap Between Surplus and Hunger",
+            "subtitle": "Join our community-driven platform to reduce food waste and ensure everyone has access to nutritious meals. Together, we can make a difference.",
+            "getStarted": "Get Started",
+            "howItWorks": "How It Works"
+        },
+        "impactTicker": {
+            "mealsSaved": "10,000+ Meals Saved This Month",
+            "newPartner": "Fresh Bites Restaurant joined as a Donor",
+            "topDonor": "Helping Hands NGO reached 500 families",
+            "distributed": "3 Tons of food distributed this week"
+        },
+        "nearYou": {
+            "title": "Donations Near You",
+            "subtitle": "Discover available food donations in your neighborhood."
+        },
+        "stats": {
+            "mealsShared": "Meals Shared",
+            "activeDonors": "Active Donors",
+            "ngoPartners": "NGO Partners",
+            "citiesCovered": "Cities Covered"
+        },
+        "howItWorksSec": {
+            "steps": {
+                "step1": {
+                    "title": "List Surplus Food",
+                    "desc": "Donors list excess food with details and pickup window."
+                },
+                "step2": {
+                    "title": "Get Notified",
+                    "desc": "Nearby NGOs receive real-time alerts for fresh donations."
+                },
+                "step3": {
+                    "title": "Efficient Pickup",
+                    "desc": "Smart routing helps NGOs collect food before it expires."
+                },
+                "step4": {
+                    "title": "Safe Delivery",
+                    "desc": "Food reaches those in need safely and promptly."
+                }
+            }
+        },
+        "cta": {
+            "title": "Ready to Make an Impact?",
+            "subtitle": "Join thousands of donors and NGOs working together to end hunger in our communities.",
+            "button": "Join Now"
+        },
+        "team": {
+            "title": "Meet the Minds Behind the Movement",
+            "subtitle": "The visionary team at JS Corporations working tirelessly to create a hunger-free world through innovation and compassion.",
+            "regNo": "Reg No"
+        }
+    }
+}

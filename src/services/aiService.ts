@@ -114,6 +114,12 @@ export const analyzeFoodImage = async (imageBase64: string): Promise<AIAnalysisR
     } catch (orError: any) {
         console.warn("OpenRouter Gemini 2.0 failed:", orError.message);
 
+        // Specific user-friendly message for training policy error
+        const isTrainingError = orError.message.includes("data policy") || orError.message.includes("train on my prompts");
+        const safetyMessage = isTrainingError
+            ? "AI Analysis requires enabling 'Allow models to train' in OpenRouter settings for free models."
+            : "AI Service temporarily unavailable.";
+
         // 1.1 Retry with Stable Gemini 1.5 Flash
         try {
             if (OPENROUTER_API_KEY) {
@@ -125,36 +131,15 @@ export const analyzeFoodImage = async (imageBase64: string): Promise<AIAnalysisR
             console.warn("OpenRouter fallback failed:", backupError.message);
         }
 
-        console.warn("Switching to Groq...", orError);
+        console.warn("AI Services unavailable. Defaulting to Manual Verification.");
+        return {
+            freshnessScore: 0,
+            isEdible: false,
+            tags: ["AI Unavailable", "Manual Verify"],
+            safetyNotes: safetyMessage,
+            estimatedShelfLife: "Manual Check Required"
+        };
     }
-
-    // 2. Groq Vision (Decommissioned as of Dec 2024)
-    // The llama-3.2-90b-vision-preview model is no longer available.
-    // We skip this fallback to avoid 400 errors.
-    /*
-    try {
-        console.log("Attempting Groq (Llama 3.2 Vision)...");
-        if (GROQ_API_KEY) {
-            // Using 90b as 11b is decommissioned
-            const data = await callGroq('llama-3.2-90b-vision-preview', messages, { type: "json_object" });
-            return JSON.parse(data.choices[0].message.content);
-        } else {
-            console.warn("Skipping Groq: No API Key found.");
-        }
-    } catch (groqError) {
-        console.error("Groq failed:", groqError);
-    }
-    */
-
-    // 3. Safe Fallback (Fail Secure)
-    console.warn("AI Services unavailable. Defaulting to Manual Verification.");
-    return {
-        freshnessScore: 0,
-        isEdible: false,
-        tags: ["Analysis Failed", "Manual Verify"],
-        safetyNotes: "AI Service unavailable. Manual verification required.",
-        estimatedShelfLife: "Unknown"
-    };
 };
 
 export const generateSmartRecipes = async (ingredients: string[]): Promise<any[]> => {

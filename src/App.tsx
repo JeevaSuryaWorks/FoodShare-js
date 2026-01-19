@@ -21,6 +21,8 @@ import AddDonation from "./pages/AddDonation";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import VerificationRequest from "./pages/VerificationRequest";
+import NotificationCenter from "./components/NotificationCenter";
+import PrivacySettings from "./pages/PrivacySettings";
 
 import Leaderboard from "./pages/Leaderboard";
 import RecipeGenerator from "./pages/RecipeGenerator";
@@ -110,6 +112,22 @@ const App = () => {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/data-use" element={<DataUse />} />
                 <Route path="/guide-appreciation" element={<GuideAppreciation />} />
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute allowedRoles={['donor', 'ngo']}>
+                      <NotificationCenter />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/privacy-settings"
+                  element={
+                    <ProtectedRoute allowedRoles={['donor', 'ngo']}>
+                      <PrivacySettings />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </SecurityWaitwall>

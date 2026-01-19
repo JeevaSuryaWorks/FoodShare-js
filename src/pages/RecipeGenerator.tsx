@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { generateSmartRecipes } from '@/services/aiService';
-import { Loader2, ChefHat, Sparkles, Clock, BarChart, Bookmark, Trash2, ExternalLink } from 'lucide-react';
+import { Loader2, ChefHat, Sparkles, Clock, BarChart, Bookmark, Trash2, ExternalLink, Package, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import {
     Dialog,
@@ -17,14 +17,17 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { Recipe } from '@/types';
+import { Recipe, InventoryItem } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const RecipeGenerator: React.FC = () => {
     const { currentUser } = useAuth();
     const [ingredients, setIngredients] = useState('');
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [savedRecipes, setSavedRecipes] = useState<(Recipe & { id: string })[]>([]);
+    const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [activeTab, setActiveTab] = useState('generate');
@@ -46,7 +49,21 @@ const RecipeGenerator: React.FC = () => {
             setSavedRecipes(saved);
         });
 
-        return unsubscribe;
+        // Fetch Inventory
+        const invQ = query(collection(db, `users/${currentUser.uid}/inventory`));
+        const unsubscribeInv = onSnapshot(invQ, (snapshot) => {
+            const items = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                expiryDate: doc.data().expiryDate?.toDate() || new Date()
+            } as InventoryItem));
+            setInventory(items);
+        });
+
+        return () => {
+            unsubscribe();
+            unsubscribeInv();
+        };
     }, [currentUser]);
 
     const navigate = useNavigate(); // Add navigation
@@ -82,6 +99,32 @@ const RecipeGenerator: React.FC = () => {
             }
         }
     }, [currentUser]);
+
+    const handleSyncInventory = () => {
+        if (inventory.length === 0) {
+            toast.error("No items found in your inventory.");
+            return;
+        }
+        // Take up to 5 items that are not expired
+        const items = inventory
+            .filter(item => item.expiryDate > new Date())
+            .slice(0, 5)
+            .map(item => item.name);
+
+        if (items.length === 0) {
+            toast.info("No fresh items in inventory to sync.");
+            return;
+        }
+
+        setIngredients(items.join(', '));
+        toast.success(`Synced ${items.length} items from inventory!`);
+    };
+
+    const handleAddIngredient = (name: string) => {
+        const current = ingredients.split(',').map(i => i.trim()).filter(i => i);
+        if (current.includes(name)) return;
+        setIngredients(current.length > 0 ? `${ingredients}, ${name}` : name);
+    };
 
     const handleGenerate = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -174,8 +217,8 @@ const RecipeGenerator: React.FC = () => {
                     </TabsList>
 
                     <TabsContent value="generate" className="animate-fade-in">
-                        <div className="glass-card rounded-2xl p-6 md:p-8 mb-12 animate-fade-up" style={{ animationDelay: '0.1s' }}>
-                            <form onSubmit={handleGenerate} className="flex flex-col sm:flex-row gap-4">
+                        <div className="glass-card rounded-2xl p-6 md:p-8 mb-8 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+                            <form onSubmit={handleGenerate} className="flex flex-col sm:flex-row gap-4 mb-6">
                                 <div className="flex-1">
                                     <Label htmlFor="ingredients" className="sr-only">Ingredients</Label>
                                     <Input
@@ -206,6 +249,41 @@ const RecipeGenerator: React.FC = () => {
                                     )}
                                 </Button>
                             </form>
+
+                            {currentUser && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                            <Package className="h-4 w-4" />
+                                            Your Inventory Items
+                                        </h3>
+                                        <Button variant="outline" size="sm" onClick={handleSyncInventory} className="h-8 text-xs gap-1">
+                                            <Sparkles className="h-3 w-3 text-orange-500" />
+                                            Sync All
+                                        </Button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {inventory.length === 0 ? (
+                                            <p className="text-xs text-muted-foreground italic">Add items in your Dashboard to see them here.</p>
+                                        ) : (
+                                            inventory.slice(0, 8).map(item => (
+                                                <Badge
+                                                    key={item.id}
+                                                    variant="secondary"
+                                                    className="cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors py-1 px-3 gap-1"
+                                                    onClick={() => handleAddIngredient(item.name)}
+                                                >
+                                                    {item.name}
+                                                    <Plus className="h-3 w-3 opacity-50" />
+                                                </Badge>
+                                            ))
+                                        )}
+                                        {inventory.length > 8 && (
+                                            <span className="text-xs text-muted-foreground py-1">+{inventory.length - 8} more</span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6 animate-fade-up">

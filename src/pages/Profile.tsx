@@ -7,10 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Camera, User, Phone, MapPin, Building2, Save, X, Edit2, Award, Heart, Users, ShieldCheck } from 'lucide-react';
+import { Loader2, Camera, User, Phone, MapPin, Building2, Save, X, Edit2, Award, Heart, Users, ShieldCheck, Shield, ChevronRight } from 'lucide-react';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-
 import { useNavigate } from 'react-router-dom';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 
@@ -18,11 +17,6 @@ const Profile: React.FC = () => {
     const { currentUser, userData } = useAuth();
     const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
-    // ... existing state ...
-
-    // ... inside component ...
-
-    // ... inside component ...
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({ totalDonations: 0, peopleFed: 0, karmaPoints: 0 });
 
@@ -32,7 +26,7 @@ const Profile: React.FC = () => {
     const [bio, setBio] = useState('');
     const [organizationName, setOrganizationName] = useState('');
     const [photoURL, setPhotoURL] = useState('');
-    const [address, setAddress] = useState(''); // Added address state
+    const [address, setAddress] = useState('');
 
     useEffect(() => {
         if (userData) {
@@ -41,9 +35,8 @@ const Profile: React.FC = () => {
             setBio(userData.bio || '');
             setOrganizationName(userData.organizationName || '');
             setPhotoURL(userData.photoURL || '');
-            setAddress(userData.address || ''); // Load address
+            setAddress(userData.address || '');
 
-            // Load Stats
             if (currentUser) {
                 getUserStats(currentUser.uid).then(setStats);
             }
@@ -71,7 +64,6 @@ const Profile: React.FC = () => {
     const handleSave = async () => {
         if (!currentUser) return;
 
-        // Validation for NGO
         if (userData.role === 'ngo' && !address.trim()) {
             toast({ title: "Address is required for NGOs", variant: "destructive" });
             return;
@@ -84,7 +76,7 @@ const Profile: React.FC = () => {
                 phone,
                 bio,
                 organizationName,
-                address // Save address
+                address
             });
             setIsEditing(false);
             toast({ title: "Profile updated successfully!" });
@@ -100,7 +92,7 @@ const Profile: React.FC = () => {
         if (!currentUser?.email) return;
         try {
             await sendPasswordResetEmail(auth, currentUser.email);
-            toast({ title: "Password reset email sent", description: "Check your inbox to reset your password." });
+            toast({ title: "Password reset email sent", description: "Check your inbox." });
         } catch (error) {
             toast({ title: "Error sending reset email", variant: "destructive" });
         }
@@ -116,7 +108,7 @@ const Profile: React.FC = () => {
                 <h1 className="text-3xl font-display font-bold text-foreground mb-8">My Profile</h1>
 
                 <div className="grid md:grid-cols-3 gap-8">
-                    {/* Left Column: Stats & Actions */}
+                    {/* Left Column */}
                     <div className="space-y-6">
                         {/* Avatar Card */}
                         <div className="glass-card rounded-xl p-6 flex flex-col items-center text-center">
@@ -148,19 +140,11 @@ const Profile: React.FC = () => {
                                 {!userData.isVerified && (userData.role as string) !== 'admin' && (
                                     <Button
                                         variant="outline"
-                                        className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                                        className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
                                         onClick={() => navigate('/verify-request')}
                                         disabled={userData.verificationStatus === 'pending'}
                                     >
-                                        {userData.verificationStatus === 'pending' ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-3 w-3 animate-spin" /> Verification Pending
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ShieldCheck className="mr-2 h-3 w-3" /> Get Verified
-                                            </>
-                                        )}
+                                        {userData.verificationStatus === 'pending' ? "Verification Pending" : "Get Verified"}
                                     </Button>
                                 )}
                                 <Button variant="outline" className="w-full" onClick={handlePasswordReset}>
@@ -175,50 +159,60 @@ const Profile: React.FC = () => {
                                 <Award className="h-5 w-5 text-primary mr-2" />
                                 Lifetime Impact
                             </h3>
-
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                            <Heart className="h-4 w-4 text-primary" />
-                                        </div>
+                                        <Heart className="h-4 w-4 text-primary" />
                                         <span className="text-sm font-medium">Donations</span>
                                     </div>
                                     <span className="font-bold text-lg">{stats.totalDonations}</span>
                                 </div>
-
                                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
-                                            <Users className="h-4 w-4 text-success" />
-                                        </div>
+                                        <Users className="h-4 w-4 text-success" />
                                         <span className="text-sm font-medium">People Fed</span>
                                     </div>
                                     <span className="font-bold text-lg">{stats.peopleFed}</span>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Account Security */}
+                        <div className="glass-card rounded-xl p-6">
+                            <h3 className="font-semibold text-lg mb-4 flex items-center text-emerald-600">
+                                <Shield className="h-5 w-5 mr-2" />
+                                Account Security
+                            </h3>
+                            <p className="text-xs text-muted-foreground mb-4">
+                                Manage E2E keys and privacy preferences.
+                            </p>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-between"
+                                onClick={() => navigate('/privacy-settings')}
+                            >
+                                <span className="flex items-center gap-2 text-xs">
+                                    <ShieldCheck className="h-4 w-4" /> Privacy Settings
+                                </span>
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* Right Column: Profile Details */}
+                    {/* Right Column */}
                     <div className="md:col-span-2">
                         <div className="glass-card rounded-xl p-6 relative">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-semibold">Personal Information</h3>
                                 {!isEditing ? (
                                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
-                                        <Edit2 className="h-4 w-4 mr-2" />
-                                        Edit Profile
+                                        <Edit2 className="h-4 w-4 mr-2" /> Edit
                                     </Button>
                                 ) : (
                                     <div className="flex gap-2">
-                                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} disabled={loading}>
-                                            <X className="h-4 w-4 mr-2" />
-                                            Cancel
-                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
                                         <Button variant="default" size="sm" onClick={handleSave} disabled={loading}>
-                                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                            Save Changes
+                                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
                                         </Button>
                                     </div>
                                 )}
@@ -227,83 +221,31 @@ const Profile: React.FC = () => {
                             <div className="space-y-6">
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="displayName">Full Name</Label>
-                                        <div className="relative">
-                                            <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="displayName"
-                                                value={displayName}
-                                                onChange={(e) => setDisplayName(e.target.value)}
-                                                disabled={!isEditing}
-                                                className="pl-9"
-                                            />
-                                        </div>
+                                        <Label>Full Name</Label>
+                                        <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} disabled={!isEditing} />
                                     </div>
-
                                     <div className="space-y-2">
-                                        <Label htmlFor="phone">Phone Number</Label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="phone"
-                                                value={phone}
-                                                onChange={(e) => setPhone(e.target.value)}
-                                                disabled={!isEditing}
-                                                className="pl-9"
-                                            />
-                                        </div>
+                                        <Label>Phone</Label>
+                                        <Input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={!isEditing} />
                                     </div>
                                 </div>
-
                                 {userData.role === 'ngo' && (
                                     <div className="space-y-2">
-                                        <Label htmlFor="orgName">Organization Name <span className="text-destructive">*</span></Label>
-                                        <div className="relative">
-                                            <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="orgName"
-                                                value={organizationName}
-                                                onChange={(e) => setOrganizationName(e.target.value)}
-                                                disabled={!isEditing}
-                                                className="pl-9"
-                                                required
-                                            />
-                                        </div>
+                                        <Label>Organization</Label>
+                                        <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} disabled={!isEditing} />
                                     </div>
                                 )}
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="address">Address {userData.role === 'ngo' && <span className="text-destructive">*</span>}</Label>
-                                    <div className="relative">
-                                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="address"
-                                            value={address}
-                                            onChange={(e) => setAddress(e.target.value)}
-                                            disabled={!isEditing}
-                                            className="pl-9"
-                                            placeholder="Full Address (for navigation)"
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">Required for delivery navigation.</p>
+                                    <Label>Address</Label>
+                                    <Input value={address} onChange={(e) => setAddress(e.target.value)} disabled={!isEditing} />
                                 </div>
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Email Address</Label>
+                                    <Label>Email</Label>
                                     <Input value={userData.email} disabled className="bg-muted/50" />
-                                    <p className="text-xs text-muted-foreground">Email cannot be changed</p>
                                 </div>
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="bio">Bio / About</Label>
-                                    <Textarea
-                                        id="bio"
-                                        placeholder="Tell us a bit about yourself..."
-                                        value={bio}
-                                        onChange={(e) => setBio(e.target.value)}
-                                        disabled={!isEditing}
-                                        className="min-h-[100px]"
-                                    />
+                                    <Label>Bio</Label>
+                                    <Textarea value={bio} onChange={(e) => setBio(e.target.value)} disabled={!isEditing} className="min-h-[100px]" />
                                 </div>
                             </div>
                         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Donation, DonationStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -177,21 +177,37 @@ const DonationCard: React.FC<DonationCardProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="h-8 w-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
-              <Clock className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${(() => {
+                const now = new Date();
+                const expiry = new Date(donation.expiryTime);
+                const diffHours = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60);
+                if (diffHours < 0) return 'bg-zinc-200 dark:bg-zinc-800';
+                if (diffHours < 2) return 'bg-red-500 animate-pulse';
+                if (diffHours < 6) return 'bg-orange-500';
+                return 'bg-red-100 dark:bg-red-900/30';
+              })()
+              }`}>
+              <Clock className={`h-4 w-4 ${(() => {
+                  const now = new Date();
+                  const expiry = new Date(donation.expiryTime);
+                  const diffHours = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60);
+                  if (diffHours < 2 && diffHours >= 0) return 'text-white';
+                  return 'text-red-600 dark:text-red-400';
+                })()
+                }`} />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Expires</span>
-              <span className="text-sm font-medium truncate">
-                {(() => {
-                  try {
-                    const date = new Date(donation.expiryTime);
-                    if (isNaN(date.getTime())) return donation.expiryTime;
-                    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                  } catch (e) {
-                    return donation.expiryTime;
-                  }
-                })()}
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Expires In</span>
+              <span className={`text-sm font-bold truncate ${(() => {
+                  const now = new Date();
+                  const expiry = new Date(donation.expiryTime);
+                  const diffHours = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60);
+                  if (diffHours < 0) return 'text-zinc-400 line-through';
+                  if (diffHours < 2) return 'text-red-600 dark:text-red-400';
+                  return 'text-foreground';
+                })()
+                }`}>
+                <ExpiryCountdown expiryTime={donation.expiryTime} />
               </span>
             </div>
           </div>
@@ -313,6 +329,42 @@ const DonationCard: React.FC<DonationCardProps> = ({
       </div>
     </div>
   );
+};
+
+const ExpiryCountdown: React.FC<{ expiryTime: string }> = ({ expiryTime }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const expiry = new Date(expiryTime);
+      const diff = expiry.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setTimeLeft('Expired');
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (hours > 24) {
+        setTimeLeft(`${Math.floor(hours / 24)}d ${hours % 24}h`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m`);
+      } else {
+        setTimeLeft(`${minutes}m ${seconds}s`);
+      }
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [expiryTime]);
+
+  return <span>{timeLeft}</span>;
 };
 
 export default DonationCard;

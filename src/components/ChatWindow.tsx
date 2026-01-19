@@ -11,6 +11,8 @@ import { Send, X, MessageSquare, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { encryptMessage, decryptMessage } from '@/lib/encryption';
+import { ShieldCheck } from 'lucide-react';
 
 interface ChatWindowProps {
     otherUserId: string; // The user we are chatting with
@@ -85,6 +87,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ otherUserId, otherUserName, don
     }, [isOpen, currentUser, otherUserId, donationId]);
 
     // Listen for messages
+    const [decryptedTexts, setDecryptedTexts] = useState<Record<string, string>>({});
+
     useEffect(() => {
         if (!chatId) {
             setMessages([]);
@@ -94,13 +98,28 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ otherUserId, otherUserName, don
         const messagesRef = collection(db, `chats/${chatId}/messages`);
         const q = query(messagesRef, orderBy('createdAt', 'asc'));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        const unsubscribe = onSnapshot(q, async (snapshot) => {
             const msgs = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
                 createdAt: doc.data().createdAt?.toDate() || new Date(),
             })) as Message[];
+
             setMessages(msgs);
+
+            // Handle decryption
+            if (currentUser) {
+                const newDecrypted = { ...decryptedTexts };
+                let changed = false;
+                for (const msg of msgs) {
+                    if (msg.text.startsWith('e2e:') && !newDecrypted[msg.id]) {
+                        const decrypted = await decryptMessage(msg.text, currentUser.uid);
+                        newDecrypted[msg.id] = decrypted;
+                        changed = true;
+                    }
+                }
+                if (changed) setDecryptedTexts(newDecrypted);
+            }
 
             // Auto-scroll
             setTimeout(() => {
@@ -111,7 +130,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ otherUserId, otherUserName, don
         });
 
         return unsubscribe;
-    }, [chatId]);
+    }, [chatId, currentUser]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -148,11 +167,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ otherUserId, otherUserName, don
                 });
             }
 
+            // Encrypt message
+            const encryptedText = await encryptMessage(newMessage, currentUser.uid);
+
             // Add message
             await addDoc(collection(db, `chats/${currentChatId}/messages`), {
                 chatId: currentChatId,
                 senderId: currentUser.uid,
-                text: newMessage,
+                text: encryptedText,
                 createdAt: serverTimestamp(),
                 readBy: [currentUser.uid]
             });
@@ -206,13 +228,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ otherUserId, otherUserName, don
                         ) : (
                             messages.map((msg) => {
                                 const isMe = msg.senderId === currentUser?.uid;
+                                const isEncrypted = msg.text.startsWith('e2e:');
+                                const displayText = isEncrypted ? (decryptedTexts[msg.id] || 'Decrypting...') : msg.text;
+
                                 return (
                                     <div key={msg.id} className={cn("flex", isMe ? "justify-end" : "justify-start")}>
                                         <div className={cn(
                                             "max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow-sm",
                                             isMe ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
                                         )}>
-                                            {msg.text}
+                                            <div className="flex flex-col gap-1">
+                                                {displayText}
+                                                {isEncrypted && (
+                                                    <div className="flex items-center gap-1 opacity-50 text-[8px] uppercase font-bold tracking-tighter">
+                                                        <ShieldCheck className="h-2 w-2" /> Secured E2E
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div className={cn("text-[10px] mt-1 opacity-70", isMe ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                                 {formatDistanceToNow(msg.createdAt, { addSuffix: true })}
                                             </div>

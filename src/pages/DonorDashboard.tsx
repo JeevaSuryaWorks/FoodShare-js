@@ -10,6 +10,10 @@ import { Plus, Package, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import SocialShare from '@/components/SocialShare';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DigitalCertificate from '@/components/DigitalCertificate';
+import { Award, Star, Trophy, ShieldCheck, FileText } from 'lucide-react';
+import CSRReportModal from '@/components/CSRReportModal';
 
 const DonorDashboard: React.FC = () => {
   const { currentUser, userData } = useAuth();
@@ -70,6 +74,15 @@ const DonorDashboard: React.FC = () => {
     completed: donations.filter(d => d.status === 'completed').length,
   };
 
+  const milestones = [
+    { threshold: 1, title: 'First Contribution', type: 'bronze' as const, milestone: 'First Shared Meal' },
+    { threshold: 5, title: 'Community Supporter', type: 'silver' as const, milestone: '5+ Shared Meals' },
+    { threshold: 10, title: 'Hunger Warrior', type: 'gold' as const, milestone: '10+ Shared Meals' },
+    { threshold: 25, title: 'Elite Philanthropist', type: 'platinum' as const, milestone: '25+ Shared Meals' },
+  ];
+
+  const earnedMilestones = milestones.filter(m => stats.completed >= m.threshold);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -83,7 +96,17 @@ const DonorDashboard: React.FC = () => {
             </h1>
             <p className="text-muted-foreground">Manage your food donations</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <CSRReportModal
+              donations={donations}
+              userData={userData}
+              trigger={
+                <Button variant="outline" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Impact Report
+                </Button>
+              }
+            />
             <SocialShare
               title="My Impact on FeedReach"
               text={`I'm proud to have shared ${stats.total} meals on FeedReach! Join me in reducing food waste.`}
@@ -160,17 +183,70 @@ const DonorDashboard: React.FC = () => {
             </Link>
           </div>
         ) : (
-          /* Donations Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {donations.map((donation) => (
-              <DonationCard
-                key={donation.id}
-                donation={donation}
-                userRole="donor"
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
+          <Tabs defaultValue="donations" className="space-y-8">
+            <TabsList className="bg-muted/40 p-1 rounded-xl">
+              <TabsTrigger value="donations" className="rounded-lg px-6">My Donations</TabsTrigger>
+              <TabsTrigger value="achievements" className="rounded-lg px-6 flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                Achievements
+                {earnedMilestones.length > 0 && (
+                  <span className="ml-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">
+                    {earnedMilestones.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="donations" className="animate-fade-in outline-none">
+              {/* Donations Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {donations.map((donation) => (
+                  <DonationCard
+                    key={donation.id}
+                    donation={donation}
+                    userRole="donor"
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="achievements" className="animate-fade-in outline-none">
+              <div className="space-y-12">
+                <div className="text-center max-w-2xl mx-auto">
+                  <h2 className="text-2xl font-bold mb-2">Your Impact Recognition</h2>
+                  <p className="text-muted-foreground italic">
+                    "The best way to find yourself is to lose yourself in the service of others." — Mahatma Gandhi
+                  </p>
+                </div>
+
+                {earnedMilestones.length === 0 ? (
+                  <div className="text-center py-20 bg-muted/20 border border-dashed rounded-3xl">
+                    <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+                      <Trophy className="h-10 w-10 text-muted-foreground opacity-30" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">No Certificates Yet</h3>
+                    <p className="text-muted-foreground max-w-sm mx-auto">
+                      Complete your first food donation to earn your first Digital Certificate of Appreciation.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-12">
+                    {earnedMilestones.reverse().map((m, idx) => (
+                      <div key={idx} className="animate-fade-up" style={{ animationDelay: `${idx * 0.2}s` }}>
+                        <DigitalCertificate
+                          userName={userData?.displayName || 'Supporter'}
+                          milestone={m.milestone}
+                          date={new Date().toLocaleDateString()}
+                          type={m.type}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
       </main>
     </div>

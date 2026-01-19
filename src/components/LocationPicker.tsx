@@ -1,158 +1,124 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MapPin, Crosshair, Loader2 } from 'lucide-react';
 import { Location } from '@/types';
 
+// Fix for default marker icons in Leaflet with Vite/Webpack
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
 interface LocationPickerProps {
   value?: Location;
   onChange: (location: Location) => void;
-  apiKey: string;
 }
 
-const mapContainerStyle = {
-  width: '100%',
-  height: '300px',
-  borderRadius: '0.75rem'
+const defaultCenter: [number, number] = [28.6139, 77.209]; // New Delhi
+
+// Component to handle map clicks and updating position
+const MapEvents = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
+  useMapEvents({
+    click(e) {
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
 };
 
-const defaultCenter = {
-  lat: 28.6139,
-  lng: 77.209
+// Component to update map center programmatically
+const ChangeView = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  map.setView(center, map.getZoom());
+  return null;
 };
 
-const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places"];
-
-const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange, apiKey }) => {
-  const [center, setCenter] = useState(value ? { lat: value.lat, lng: value.lng } : defaultCenter);
-  const [marker, setMarker] = useState<{ lat: number; lng: number } | null>(
-    value ? { lat: value.lat, lng: value.lng } : null
+const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange }) => {
+  const [position, setPosition] = useState<[number, number] | null>(
+    value && value.lat !== 0 ? [value.lat, value.lng] : null
   );
   const [address, setAddress] = useState(value?.address || '');
   const [loading, setLoading] = useState(false);
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey,
-    libraries // Use static constant to prevent reloading
-  });
+  const [mapCenter, setMapCenter] = useState<[number, number]>(
+    value && value.lat !== 0 ? [value.lat, value.lng] : defaultCenter
+  );
 
   const getAddressFromCoords = useCallback(async (lat: number, lng: number) => {
-    if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') return;
-
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+        {
+          headers: {
+            'Accept-Language': 'en',
+            'User-Agent': 'FeedReach-App'
+          }
+        }
       );
       const data = await response.json();
-      if (data.results && data.results[0]) {
-        return data.results[0].formatted_address;
+      if (data.display_name) {
+        return data.display_name;
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error('Reverse geocoding error:', error);
     }
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-  }, [apiKey]);
+  }, []);
 
-  const handleMapClick = useCallback(async (e: google.maps.MapMouseEvent) => {
-    if (!e.latLng) return;
-
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
-
-    setMarker({ lat, lng });
+  const handleLocationSelect = useCallback(async (lat: number, lng: number) => {
+    setPosition([lat, lng]);
     setLoading(true);
-
     const addr = await getAddressFromCoords(lat, lng);
-    setAddress(addr || '');
+    setAddress(addr);
     setLoading(false);
+    onChange({ lat, lng, address: addr });
+  }, [getAddressFromCoords, onChange]);
 
-    onChange({
-      lat,
-      lng,
-      address: addr || `${lat.toFixed(6)}, ${lng.toFixed(6)}`
-    });
-  }, [onChange, getAddressFromCoords]);
-
-  const detectCurrentLocation = async () => {
+  const detectCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser');
       return;
     }
 
     setLoading(true);
-
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        console.log("Location detected:", latitude, longitude);
+        setMapCenter([latitude, longitude]);
+        setPosition([latitude, longitude]);
 
-        setCenter({ lat, lng });
-        setMarker({ lat, lng });
-
-        const addr = await getAddressFromCoords(lat, lng);
-        setAddress(addr || '');
+        setLoading(true);
+        const addr = await getAddressFromCoords(latitude, longitude);
+        setAddress(addr);
         setLoading(false);
 
         onChange({
-          lat,
-          lng,
-          address: addr || `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+          lat: latitude,
+          lng: longitude,
+          address: addr
         });
       },
       (error) => {
         console.error('Geolocation error:', error);
         setLoading(false);
-        alert('Unable to retrieve your location');
+        let msg = 'Unable to retrieve your location.';
+        if (error.code === 1) msg = 'Location access denied. Please enable it in your browser settings.';
+        alert(msg);
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
   };
-
-  if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
-    return (
-      <div className="space-y-4">
-        <div className="p-6 bg-muted/50 rounded-xl border-2 border-dashed border-border text-center">
-          <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-2">Google Maps API key not configured</p>
-          <p className="text-sm text-muted-foreground">
-            Please add your Google Maps API key to enable location picking
-          </p>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Manual Address Entry</label>
-          <Input
-            placeholder="Enter location address manually"
-            value={address}
-            onChange={(e) => {
-              setAddress(e.target.value);
-              onChange({
-                lat: 0,
-                lng: 0,
-                address: e.target.value
-              });
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="p-6 bg-destructive/10 rounded-xl border border-destructive/30 text-center">
-        <p className="text-destructive">Error loading Google Maps</p>
-      </div>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="h-[300px] flex items-center justify-center bg-muted/50 rounded-xl">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
@@ -162,36 +128,59 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange, apiKey
           variant="outline"
           onClick={detectCurrentLocation}
           disabled={loading}
-          className="flex-1"
+          className="flex-1 h-10 gap-2"
         >
           {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
           ) : (
-            <Crosshair className="h-4 w-4" />
+            <Crosshair className="h-4 w-4 text-primary" />
           )}
           Detect My Location
         </Button>
       </div>
 
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={center}
-        zoom={13}
-        onClick={handleMapClick}
-        options={{
-          streetViewControl: false,
-          mapTypeControl: false,
-          fullscreenControl: false
-        }}
-      >
-        {marker && <Marker position={marker} />}
-      </GoogleMap>
+      <div className="h-[300px] w-full rounded-xl overflow-hidden border-2 border-border relative z-0">
+        <MapContainer
+          center={mapCenter}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          scrollWheelZoom={false}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <ChangeView center={mapCenter} />
+          <MapEvents onLocationSelect={handleLocationSelect} />
+          {position && <Marker position={position} />}
+        </MapContainer>
+      </div>
 
-      <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
-        <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-        <span className="text-sm text-muted-foreground">
-          {address || 'Click on the map to select a location'}
-        </span>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-foreground flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary" />
+            Pickup Address
+          </label>
+          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Manual Entry Supported</span>
+        </div>
+        <Input
+          placeholder="Enter address manually or select on map"
+          value={address}
+          onChange={(e) => {
+            const val = e.target.value;
+            setAddress(val);
+            onChange({
+              lat: position ? position[0] : 0,
+              lng: position ? position[1] : 0,
+              address: val
+            });
+          }}
+          className="focus-visible:ring-primary"
+        />
+        <p className="text-[10px] text-muted-foreground italic">
+          * Powered by OpenStreetMap (No API Key Required)
+        </p>
       </div>
     </div>
   );

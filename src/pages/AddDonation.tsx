@@ -16,13 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Loader2, AlertCircle, Utensils, Package, Clock, MapPin, Image as ImageIcon, Camera, X, Phone } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, Utensils, Package, Clock, MapPin, Image as ImageIcon, Camera, X, Phone, ShieldCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { analyzeFoodImage } from '@/services/aiService';
 import { Sparkles, CheckCircle2, XCircle } from 'lucide-react';
-
-const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY'; // Kept generic for now
 
 const foodTypes = [
   'Cooked Food',
@@ -498,8 +496,25 @@ const AddDonation: React.FC = () => {
             <LocationPicker
               value={formData.location}
               onChange={handleLocationChange}
-              apiKey={GOOGLE_MAPS_API_KEY}
             />
+          </div>
+
+          {/* Tax Benefit Info */}
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-6 flex gap-4 animate-fade-in">
+            <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+              <ShieldCheck className="h-6 w-6 text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-emerald-900 dark:text-emerald-400 mb-1 flex items-center gap-2">
+                Tax Benefit Integration (Section 80G)
+              </h3>
+              <p className="text-sm text-emerald-800/70 dark:text-emerald-500/70 leading-relaxed italic">
+                Did you know? Donations made to our verified NGO partners are eligible for tax deductions under
+                <span className="font-bold"> Section 80G of the Income Tax Act</span>.
+                Ensure you collect the receipt from the NGO after successful pickup.
+              </p>
+              <p className="text-[10px] uppercase mt-2 opacity-50 font-bold">* Educational purpose only. Consult your tax advisor.</p>
+            </div>
           </div>
 
           {/* Submit */}
