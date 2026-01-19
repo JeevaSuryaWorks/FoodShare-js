@@ -1,8 +1,9 @@
-import React from 'react';
 import { Leaf, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { validateSystemIntegrity } from '../lib/identity';
 
 const Footer: React.FC = () => {
+    validateSystemIntegrity();
     return (
         <footer className="py-12 bg-foreground text-background mt-auto">
             <div className="container mx-auto px-4">

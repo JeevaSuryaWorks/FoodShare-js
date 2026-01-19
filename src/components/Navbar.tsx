@@ -6,6 +6,7 @@ import { Leaf, LogOut, User, Menu, X, ChevronDown, MessageSquare } from 'lucide-
 import NotificationBell from './NotificationBell';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebase';
+import { validateSystemIntegrity } from '@/lib/identity';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import {
 
 const Navbar: React.FC = () => {
   const { currentUser, userData, logout, loading } = useAuth();
+  validateSystemIntegrity();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -44,7 +46,6 @@ const Navbar: React.FC = () => {
     if (!userData) return '/';
     // Use type assertion or check string directly if role is typed as specific unions
     if ((userData.role as string) === 'admin') return '/admin';
-    if (userData.role === 'volunteer') return '/volunteer/dashboard';
     return userData.role === 'donor' ? '/donor/dashboard' : '/ngo/dashboard';
   };
 
@@ -115,7 +116,6 @@ const Navbar: React.FC = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             <NavLink to="/">Home</NavLink>
-            <NavLink to="/leaderboard">Leaderboard</NavLink>
             <NavLink to="/recipes">Smart Recipes</NavLink>
 
             {loading ? (
@@ -230,9 +230,6 @@ const Navbar: React.FC = () => {
             <div className="flex flex-col gap-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium">
                 Home
-              </Link>
-              <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium">
-                Leaderboard
               </Link>
               <Link to="/recipes" onClick={() => setMobileMenuOpen(false)} className="p-3 hover:bg-muted rounded-xl transition-colors font-medium">
                 Smart Recipes

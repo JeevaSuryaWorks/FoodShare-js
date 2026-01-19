@@ -90,7 +90,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const sendVerificationEmail = async () => {
     if (auth.currentUser) {
-      await firebaseSendEmailVerification(auth.currentUser);
+      const actionCodeSettings = {
+        url: window.location.origin + '/login',
+        handleCodeInApp: true,
+      };
+      await firebaseSendEmailVerification(auth.currentUser, actionCodeSettings);
     }
   };
 

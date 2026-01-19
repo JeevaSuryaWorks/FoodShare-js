@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type UserRole = 'donor' | 'ngo' | 'volunteer';
+export type UserRole = 'donor' | 'ngo';
 
 export type DonationStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
 
@@ -14,7 +14,7 @@ export interface User {
   organizationName?: string;
   photoURL?: string;
   bio?: string;
-  location?: Location; // Added for NGO/Volunteer location tracking
+  location?: Location; // Added for NGO location tracking
   ipAddress?: string; // Captured for security
   userAgent?: string; // Captured for security
   stats?: {
@@ -59,9 +59,6 @@ export interface Donation {
   acceptedByName?: string;
   acceptedByPhone?: string;
   acceptedByAddress?: string; // Added for multi-stop navigation
-  volunteerId?: string; // ID of the volunteer assigned for pickup
-  volunteerName?: string;
-  volunteerPhone?: string;
   deliveryStatus?: 'available_for_pickup' | 'assigned' | 'picked_up' | 'delivered';
   donorVerified?: boolean; // Added for verification badge
   createdAt: Date;

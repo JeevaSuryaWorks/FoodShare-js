@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Leaf, Heart, Users, MapPin, ArrowRight, Sparkles } from 'lucide-react';
+import { Leaf, Heart, Users, MapPin, ArrowRight, Sparkles, Code2, Crown } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import DonationMap from '@/components/DonationMap';
@@ -64,7 +64,7 @@ const Home: React.FC = () => {
                 </Button>
               ) : currentUser ? (
                 userData ? (
-                  <Link to={userData.role === 'donor' ? '/donor/dashboard' : userData.role === 'volunteer' ? '/volunteer/dashboard' : '/ngo/dashboard'}>
+                  <Link to={userData.role === 'donor' ? '/donor/dashboard' : '/ngo/dashboard'}>
                     <Button variant="hero" size="xl" className="w-full sm:w-auto text-lg h-14 px-8 shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-1">
                       Go to Dashboard
                       <ArrowRight className="h-5 w-5 ml-2" />
@@ -155,7 +155,7 @@ const Home: React.FC = () => {
               How FeedReach Works
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              A seamless ecosystem connecting donors, volunteers, and NGOs to fight hunger.
+              A seamless ecosystem connecting donors and NGOs to fight hunger.
             </p>
           </div>
 
@@ -177,8 +177,8 @@ const Home: React.FC = () => {
               },
               {
                 step: '03',
-                title: 'Volunteer Pickup',
-                description: 'Volunteers or NGOs transport the food safely.',
+                title: 'NGO Pickup',
+                description: 'NGOs organize pickup and transport the food safely.',
                 icon: MapPin,
                 color: 'bg-amber-500/10 text-amber-600'
               },
@@ -282,67 +282,89 @@ const Home: React.FC = () => {
         </div>
       </section >
 
-      {/* Team Section */}
-      <section className="py-20 bg-background text-center">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-display font-bold text-foreground mb-6">
-            Meet the Team <span className="text-primary text-xl block mt-2 font-sans font-medium">Batch 3</span>
-          </h2>
+      <section className="py-24 bg-background/50 relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-1/4 left-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
 
-          <div className="mb-12 inline-block px-6 py-3 rounded-full bg-primary/5 border border-primary/10">
-            <p className="text-muted-foreground font-medium">
-              Developed under the esteemed guidance of <span className="text-primary font-bold">Mrs. M. Predeepa, M.E.</span>
-            </p>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-16 animate-fade-up">
+            <h2 className="text-4xl md:text-5xl font-display font-extrabold text-foreground mb-6 tracking-tight">
+              Meet the <span className="gradient-text">Masterminds</span>
+              <span className="text-primary/40 text-2xl block mt-2 font-sans font-medium italic tracking-widest">Batch 3</span>
+            </h2>
+
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-white dark:bg-zinc-900 shadow-xl shadow-primary/5 border border-primary/10 hover:border-primary/30 transition-all group cursor-default">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Users className="h-5 w-5" />
+              </div>
+              <p className="text-muted-foreground font-medium text-left">
+                Developed under the esteemed guidance of <br />
+                <span className="text-primary font-bold text-lg">Mrs. M. Predeepa, M.E.</span>
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             {[
-              { name: "K. Jothilingam", id: "24506377", role: "Team Lead", initials: "JL" },
+              { name: "K. Jothilingam", id: "24506377", role: "Team Head", initials: "JL", specialty: "Elite" },
               { name: "S. Jayanth", id: "24506374", role: "Developer", initials: "JY" },
               { name: "V. Inbaraj", id: "24506373", role: "Developer", initials: "IR" },
               { name: "V. Dharan", id: "24506357", role: "Developer", initials: "DR" }
             ].map((member, index) => (
               <div
                 key={index}
-                className={`group relative p-6 rounded-2xl w-64 transition-all duration-300 animate-fade-up overflow-hidden hover:-translate-y-2
-                  ${member.role === 'Team Lead'
-                    ? 'bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 shadow-xl shadow-primary/10'
-                    : 'bg-white dark:bg-zinc-900 border border-border hover:shadow-lg hover:border-primary/30'
+                className={`group relative p-8 rounded-[2.5rem] transition-all duration-500 animate-fade-up overflow-hidden border-2
+                  ${member.specialty === 'Elite'
+                    ? 'bg-gradient-to-br from-zinc-950 to-zinc-900 border-primary/40 shadow-2xl shadow-primary/20 scale-105 z-10'
+                    : 'bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl border-border/50 hover:border-primary/40 hover:shadow-xl'
                   }`}
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
-                {/* Decorative background gradients */}
-                <div className="absolute top-0 right-0 -mr-8 -mt-8 w-24 h-24 rounded-full bg-primary/10 blur-xl group-hover:bg-primary/20 transition-all duration-500" />
-                <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-accent/10 blur-xl group-hover:bg-accent/20 transition-all duration-500" />
+                {/* Visual Flair */}
+                <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-[50px] transition-opacity duration-700
+                  ${member.specialty === 'Elite' ? 'bg-primary/30 opacity-100' : 'bg-primary/10 opacity-0 group-hover:opacity-100'}`} />
 
-                {member.role === 'Team Lead' && (
-                  <div className="absolute top-3 right-3">
-                    <div className="bg-primary text-primary-foreground text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 animate-pulse-slow">
-                      <Sparkles className="h-2 w-2" /> Lead
-                    </div>
-                  </div>
-                )}
-
-                <div className={`relative h-24 w-24 rounded-2xl mx-auto flex items-center justify-center mb-4 transition-all duration-300 transform group-hover:scale-110 shadow-md
-                  ${member.role === 'Team Lead'
-                    ? 'bg-gradient-to-br from-primary to-emerald-600 text-white shadow-primary/20'
-                    : 'bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700 text-zinc-600 dark:text-zinc-300'
-                  }`}>
-                  <span className="text-3xl font-bold font-display">{member.initials}</span>
-                </div>
-
-                <div className="relative">
-                  <h3 className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">{member.name}</h3>
-                  <p className="text-muted-foreground font-mono text-xs mt-1 mb-3 opacity-80">{member.id}</p>
-
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium 
-                     ${member.role === 'Team Lead'
-                      ? 'bg-primary/10 text-primary border border-primary/20'
-                      : 'bg-muted text-muted-foreground border border-border'
+                <div className="relative z-10 text-center">
+                  <div className={`relative h-28 w-28 rounded-3xl mx-auto flex items-center justify-center mb-6 transition-all duration-500 transform group-hover:rotate-6 group-hover:scale-110 shadow-2xl
+                    ${member.specialty === 'Elite'
+                      ? 'bg-gradient-to-br from-primary via-emerald-500 to-primary text-white ring-4 ring-primary/20 ring-offset-4 ring-offset-zinc-950'
+                      : 'bg-white dark:bg-zinc-800 text-foreground border border-border/50'
                     }`}>
-                    {member.role === 'Developer' ? '< Dev >' : member.role}
+                    <span className="text-4xl font-black font-display tracking-tight">{member.initials}</span>
+                    {member.specialty === 'Elite' && (
+                      <div className="absolute -top-2 -right-2 bg-yellow-500 text-black px-2 py-1 rounded-lg shadow-lg rotate-12 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 fill-current" />
+                        <span className="text-[10px] font-black uppercase">Elite</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <h3 className={`font-display font-extrabold text-xl mb-1 transition-colors duration-300
+                    ${member.specialty === 'Elite' ? 'text-white' : 'text-foreground group-hover:text-primary'}`}>
+                    {member.name}
+                  </h3>
+                  <p className={`font-mono text-xs font-bold uppercase tracking-widest mt-1 mb-4
+                    ${member.specialty === 'Elite' ? 'text-primary' : 'text-muted-foreground'}`}>
+                    Reg No: {member.id}
+                  </p>
+
+                  <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider
+                     ${member.specialty === 'Elite'
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                      : 'bg-muted text-muted-foreground border border-border opacity-80 group-hover:opacity-100'
+                    }`}>
+                    {member.specialty === 'Elite' ? (
+                      <Crown className="h-3 w-3" />
+                    ) : (
+                      <Code2 className="h-3 w-3 text-primary" />
+                    )}
+                    {member.role}
                   </div>
                 </div>
+
+                {/* Hover decorative lines */}
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
               </div>
             ))}
           </div>

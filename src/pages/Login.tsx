@@ -4,12 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Leaf, Loader2, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Leaf, Loader2, AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { getFriendlyErrorMessage } from '@/lib/errorUtils';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,7 +38,7 @@ const Login: React.FC = () => {
       navigate('/');
     } catch (err: unknown) {
       console.error('Login error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to login';
+      const errorMessage = getFriendlyErrorMessage(err);
       setError(errorMessage);
       toast({
         title: 'Login Failed',
@@ -136,20 +138,30 @@ const Login: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-sm text-primary hover:underline font-medium">
+                <Link to="/forgot-password" university-tag="forgot-password" className="text-sm text-primary hover:underline font-medium">
                   Forgot password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                className="h-11 bg-muted/30 focus:bg-background transition-colors"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  className="h-11 bg-muted/30 focus:bg-background transition-colors pr-12"
+                  autoComplete="current-password"
+                  spellCheck="false"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
 
             <Button type="submit" className="w-full h-11 text-base group" disabled={loading}>

@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserRole } from '@/types';
-import { Leaf, Loader2, AlertCircle, Heart, Building2, CheckCircle2, ArrowRight, Truck } from 'lucide-react';
+import { Leaf, Loader2, AlertCircle, Heart, Building2, CheckCircle2, ArrowRight, Truck, Eye, EyeOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { getFriendlyErrorMessage } from '@/lib/errorUtils';
 
 
 import {
@@ -32,6 +33,8 @@ const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
@@ -87,12 +90,11 @@ const Signup: React.FC = () => {
 
       if (sessionStorage.getItem('pendingRecipeIngredients')) {
         navigate('/recipes');
-      } else if (role === 'volunteer') navigate('/volunteer/dashboard');
-      else if (role === 'ngo') navigate('/ngo/dashboard');
+      } else if (role === 'ngo') navigate('/ngo/dashboard');
       else navigate('/donor/dashboard');
     } catch (err: unknown) {
       console.error('Signup error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
+      const errorMessage = getFriendlyErrorMessage(err);
       setError(errorMessage);
       toast({
         title: 'Signup Failed',
@@ -107,12 +109,12 @@ const Signup: React.FC = () => {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left Panel - Hero/Branding */}
-      <div className="hidden lg:relative lg:flex flex-col justify-between bg-primary/5 p-12 overflow-hidden">
+      <div className="hidden lg:relative lg:flex flex-col justify-center bg-primary/5 p-12 overflow-hidden">
         <div className="absolute inset-0 bg-primary/5" />
         <div className="absolute top-0 right-0 -mr-20 -mt-20 h-96 w-96 rounded-full bg-primary/10 blur-3xl opacity-50" />
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-96 w-96 rounded-full bg-accent/10 blur-3xl opacity-50" />
 
-        <div className="relative z-10">
+        <div className="relative z-10 mb-auto">
           <Link to="/" className="inline-flex items-center gap-2 mb-8">
             <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
               <Leaf className="h-5 w-5 text-primary" />
@@ -121,12 +123,12 @@ const Signup: React.FC = () => {
           </Link>
         </div>
 
-        <div className="relative z-10 max-w-md">
+        <div className="relative z-10 max-w-md -mt-20">
           <h1 className="text-4xl font-display font-bold text-foreground mb-6 leading-tight">
             Start Your Journey of Giving
           </h1>
           <p className="text-lg text-muted-foreground mb-8">
-            Whether you're donating surplus food or distributing it, you're a hero in our eyes.
+            Whether you're donating surplus food or distributing it, you're making a difference.
           </p>
 
           <div className="space-y-4">
@@ -135,7 +137,7 @@ const Signup: React.FC = () => {
               "Reduce environmental impact",
               "Track your social contribution"
             ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-3 animate-fade-up" style={{ animationDelay: `${0.1 * i}s` }}>
+              <div key={i} className="flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 text-primary" />
                 <span className="text-foreground/80">{feature}</span>
               </div>
@@ -143,7 +145,7 @@ const Signup: React.FC = () => {
           </div>
         </div>
 
-        <div className="relative z-10 text-sm text-muted-foreground">
+        <div className="relative z-10 mt-auto text-sm text-muted-foreground">
           © 2026 FeedReach. Reducing food waste, one meal at a time.
         </div>
       </div>
@@ -179,7 +181,7 @@ const Signup: React.FC = () => {
           {/* Role Selection */}
           <div className="mb-8">
             <Label className="mb-3 block text-base font-medium">I am a...</Label>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
                 onClick={() => setRole('donor')}
@@ -212,21 +214,6 @@ const Signup: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-1">I represents an NGO</p>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setRole('volunteer')}
-                className={`p-4 rounded-xl border-2 transition-all duration-300 text-left group ${role === 'volunteer'
-                  ? 'border-primary bg-primary/5 shadow-sm'
-                  : 'border-muted bg-background hover:border-primary/50'
-                  }`}
-              >
-                <div className={`h-10 w-10 rounded-lg flex items-center justify-center mb-3 transition-colors ${role === 'volunteer' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:text-primary'
-                  }`}>
-                  <Truck className="h-5 w-5" />
-                </div>
-                <p className="font-semibold text-foreground">Volunteer</p>
-                <p className="text-xs text-muted-foreground mt-1">I want to deliver</p>
-              </button>
             </div>
           </div>
 
@@ -302,28 +289,50 @@ const Signup: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  className="h-11 bg-muted/30 focus:bg-background transition-colors"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    className="h-11 bg-muted/30 focus:bg-background transition-colors pr-10"
+                    autoComplete="new-password"
+                    spellCheck="false"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm *</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={loading}
-                  className="h-11 bg-muted/30 focus:bg-background transition-colors"
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={loading}
+                    className="h-11 bg-muted/30 focus:bg-background transition-colors pr-10"
+                    autoComplete="new-password"
+                    spellCheck="false"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 

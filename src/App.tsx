@@ -16,7 +16,6 @@ import AuthAction from "./pages/AuthAction";
 import VerifyEmail from "./pages/VerifyEmail";
 import DonorDashboard from "./pages/DonorDashboard";
 import NGODashboard from "./pages/NGODashboard";
-import VolunteerDashboard from "./pages/VolunteerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AddDonation from "./pages/AddDonation";
 import NotFound from "./pages/NotFound";
@@ -85,17 +84,9 @@ const App = () => {
                   }
                 />
                 <Route
-                  path="/volunteer/dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={['volunteer']}>
-                      <VolunteerDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
                   path="/profile"
                   element={
-                    <ProtectedRoute allowedRoles={['donor', 'ngo', 'volunteer']}>
+                    <ProtectedRoute allowedRoles={['donor', 'ngo']}>
                       <Profile />
                     </ProtectedRoute>
                   }

@@ -21,7 +21,6 @@ import {
   AlertTriangle,
   MessageSquare
 } from 'lucide-react';
-import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import SocialShare from '@/components/SocialShare';
 import { formatDistanceToNow } from 'date-fns';
@@ -232,39 +231,6 @@ const DonationCard: React.FC<DonationCardProps> = ({
           <span>Posted {formatDistanceToNow(new Date(donation.createdAt), { addSuffix: true })}</span>
         </div>
 
-
-        {/* Accepted By Section */}
-        {donation.status !== 'pending' && donation.acceptedByName && userRole === 'donor' && (
-          <div className="mb-5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-1">Accepted By</h4>
-                <p className="text-sm font-bold text-foreground">{donation.acceptedByName}</p>
-                {donation.acceptedByPhone && (
-                  <a href={`tel:${donation.acceptedByPhone}`} className="text-xs text-muted-foreground hover:text-blue-600 flex items-center gap-1 mt-1">
-                    <Phone className="h-3 w-3" /> {donation.acceptedByPhone}
-                  </a>
-                )}
-              </div>
-              {/* Review Button */}
-              {donation.status === 'accepted' && currentUser && (
-                <ReviewModal
-                  reviewerId={currentUser.uid}
-                  reviewerName={currentUser.displayName || 'User'}
-                  targetUserId={donation.acceptedBy || ''}
-                  donationId={donation.id}
-                  trigger={
-                    <Button variant="ghost" size="sm" className="h-8 px-2 text-xs hover:bg-blue-100 dark:hover:bg-blue-800/50 text-blue-600">
-                      <Star className="h-3.5 w-3.5 mr-1.5" />
-                      Rate
-                    </Button>
-                  }
-                />
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Action Buttons */}
         <div className="space-y-3">
           <div className={`grid gap-2 ${donation.deliveryStatus || userRole === 'ngo' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
@@ -288,42 +254,6 @@ const DonationCard: React.FC<DonationCardProps> = ({
 
             {userRole === 'ngo' && donation.status === 'accepted' && (
               <div className="space-y-3 w-full">
-                {/* Delivery Request Block */}
-                {!donation.deliveryStatus && (
-                  <Button variant="default" className="w-full bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200 dark:shadow-none" onClick={() => onUpdateStatus?.(donation.id, 'available_for_pickup' as any)}>
-                    <Truck className="h-4 w-4 mr-2" /> Request Volunteer Pickup
-                  </Button>
-                )}
-
-                {donation.deliveryStatus === 'available_for_pickup' && (
-                  <div className="flex items-center justify-center p-2.5 bg-orange-50 dark:bg-orange-900/10 text-orange-600 border border-orange-200 dark:border-orange-800/30 rounded-lg animate-pulse">
-                    <Clock className="h-4 w-4 mr-2" />
-                    <span className="text-sm font-medium">Ordering Volunteer...</span>
-                  </div>
-                )}
-
-                {/* Volunteer Assigned Info */}
-                {(['assigned', 'picked_up', 'delivered'].includes(donation.deliveryStatus || '')) && donation.volunteerId && (
-                  <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-2 text-blue-700 dark:text-blue-300">
-                      <Truck className="h-4 w-4" />
-                      <span className="text-sm font-bold">Volunteer Assigned</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Name</p>
-                        <p className="font-medium text-foreground">{donation.volunteerName || 'Unknown'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Contact</p>
-                        {donation.volunteerPhone ? (
-                          <a href={`tel:${donation.volunteerPhone}`} className="font-medium text-blue-600 hover:underline">{donation.volunteerPhone}</a>
-                        ) : <span className="text-muted-foreground">-</span>}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <a href={getGoogleMapsLink()} target="_blank" rel="noopener noreferrer" className="w-full">
                     <Button variant="outline" className="w-full">
@@ -341,19 +271,6 @@ const DonationCard: React.FC<DonationCardProps> = ({
                     }
                   />
                 </div>
-
-                {donation.volunteerId && (
-                  <ChatWindow
-                    otherUserId={donation.volunteerId}
-                    otherUserName={donation.volunteerName}
-                    donationId={donation.id}
-                    trigger={
-                      <Button variant="outline" className="w-full border-dashed border-blue-300 text-blue-600 hover:bg-blue-50">
-                        <MessageSquare className="h-4 w-4 mr-2" /> Chat with Volunteer
-                      </Button>
-                    }
-                  />
-                )}
 
                 {/* Completion / Report Actions */}
                 <div className="flex gap-2 pt-2 border-t border-border/50">
@@ -375,32 +292,6 @@ const DonationCard: React.FC<DonationCardProps> = ({
                     <XCircle className="h-5 w-5" />
                   </Button>
                 </div>
-
-                {/* Report Volunteer */}
-                {(['assigned', 'picked_up'].includes(donation.deliveryStatus || '')) && donation.volunteerId && (
-                  <button
-                    className="w-full py-2 text-xs font-medium text-muted-foreground hover:text-destructive transition-colors flex items-center justify-center gap-1.5 opacity-60 hover:opacity-100"
-                    onClick={async () => {
-                      const reason = prompt("Describe the issue with this volunteer:");
-                      if (reason) {
-                        try {
-                          await addDoc(collection(db, 'complaints'), {
-                            volunteerId: donation.volunteerId,
-                            volunteerName: donation.volunteerName,
-                            ngoId: currentUser?.uid,
-                            donationId: donation.id,
-                            reason,
-                            createdAt: new Date(),
-                            status: 'pending'
-                          });
-                          alert("Report submitted.");
-                        } catch (e) { console.error(e); }
-                      }
-                    }}
-                  >
-                    <AlertTriangle className="h-3 w-3" /> Report Volunteer Issue
-                  </button>
-                )}
               </div>
             )}
           </div>

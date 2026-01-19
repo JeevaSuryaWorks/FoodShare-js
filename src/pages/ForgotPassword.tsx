@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Leaf, Loader2, AlertCircle, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
+import { getFriendlyErrorMessage } from '@/lib/errorUtils';
 
 
 const ForgotPassword = () => {
@@ -32,7 +33,7 @@ const ForgotPassword = () => {
             setMessage('Check your inbox for password reset instructions');
         } catch (err: unknown) {
             console.error('Reset password error:', err);
-            const errorMessage = err instanceof Error ? err.message : 'Failed to reset password';
+            const errorMessage = getFriendlyErrorMessage(err);
             setError(errorMessage);
         } finally {
             setLoading(false);
