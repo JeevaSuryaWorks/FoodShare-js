@@ -38,23 +38,6 @@ HTML (1.8%)
 
 Other (0.9%)
 
-## 📂 Project Structure
-FoodShare-js/
-│
-├── src/               # TypeScript source files
-│   ├── main.ts        # Main app logic
-│   ├── components/    # UI components
-│   └── utils/         # Helper functions
-│
-├── public/            # Static assets
-│   ├── index.html
-│   └── style.css
-│
-├── dist/              # Compiled output (if built)
-│
-├── package.json       # Dependencies & scripts
-├── tsconfig.json      # TypeScript configuration
-└── README.md          # Documentation
 🚀 Getting Started
 
 ## Follow these steps to run the project locally.
