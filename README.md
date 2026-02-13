@@ -1,74 +1,124 @@
-# Welcome to your Lovable project
+# 🍱 FoodShare — TypeScript Web App
 
-## Project info
+FoodShare is a TypeScript-based web application built to help reduce food waste by allowing people to share extra food with others in need.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+This project focuses on simplicity, community support, and real-world impact.
 
-## How can I edit this code?
+🌍 Why FoodShare?
 
-There are several ways of editing your application.
+Every day, a large amount of food is wasted while many people struggle to access meals.
 
-**Use Lovable**
+FoodShare solves this by enabling:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+🍛 Donors to share surplus food
 
-Changes made via Lovable will be committed automatically to this repo.
+🤝 Receivers to find available food nearby
 
-**Use your preferred IDE**
+🌱 Communities to reduce food waste
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+✨ Features
 
-The only requirement is having Bun installed - [install Bun](https://bun.sh/docs/installation)
+✅ Food sharing and listing system
 
-Follow these steps:
+📍 Location-friendly design
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+⚡ Fast and lightweight TypeScript project
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+🧑‍💻 Clean UI with modern structure
 
-# Step 3: Install the necessary dependencies.
-bun install
+🚀 Beginner-friendly codebase
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-bun run dev
-```
+🛠️ Tech Stack
 
-**Edit a file directly in GitHub**
+This repository is built mainly with:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+TypeScript (97.3%)
 
-**Use GitHub Codespaces**
+HTML (1.8%)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Other (0.9%)
 
-## What technologies are used for this project?
+📂 Project Structure
+FoodShare-js/
+│
+├── src/               # TypeScript source files
+│   ├── main.ts        # Main app logic
+│   ├── components/    # UI components
+│   └── utils/         # Helper functions
+│
+├── public/            # Static assets
+│   ├── index.html
+│   └── style.css
+│
+├── dist/              # Compiled output (if built)
+│
+├── package.json       # Dependencies & scripts
+├── tsconfig.json      # TypeScript configuration
+└── README.md          # Documentation
+🚀 Getting Started
 
-This project is built with:
+Follow these steps to run the project locally.
 
-- Bun 1.3.4
-- Vite 7.2.7
-- TypeScript
-- React 19.2.1
-- shadcn-ui
-- Tailwind CSS
+1️⃣ Clone the Repository
+git clone https://github.com/JeevaSuryaWorks/FoodShare-js.git
+2️⃣ Navigate into the Project Folder
+cd FoodShare-js
+3️⃣ Install Dependencies
 
-## How can I deploy this project?
+Make sure Node.js is installed, then run:
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+npm install
+4️⃣ Run the Project
+npm run dev
 
-## Can I connect a custom domain to my Lovable project?
+or if using build mode:
 
-Yes, you can!
+npm run build
+npm start
+📸 Screenshots
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Add screenshots here later
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+![FoodShare UI](public/preview.png)
+🎯 Future Enhancements
+
+Planned improvements for upcoming versions:
+
+🔐 User Authentication (Login/Signup)
+
+📍 Live location-based food discovery
+
+🗄️ Database + Backend Integration
+
+📱 Mobile Responsive Design
+
+📨 Notifications for food availability
+
+🤝 Contribution
+
+Contributions are welcome!
+
+Steps:
+
+Fork this repo
+
+Create a new branch
+
+Commit your changes
+
+Submit a Pull Request
+
+📄 License
+
+This project is licensed under the MIT License.
+
+👨‍💻 Author
+
+Jeevasurya
+📌 GitHub: @JeevaSuryaWorks
+
+⭐ If you find this project useful, please consider giving it a star!
+
+💡 Support
+
+If you want to add backend, deploy this project, or turn it into a real Food Donation platform, feel free to ask 😄
