@@ -30,6 +30,9 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import DataUse from "./pages/DataUse";
 import GuideAppreciation from "./pages/GuideAppreciation";
+import Gate from "./pages/Gate";
+
+import GlobalGate from "./components/GlobalGate";
 
 import { useEffect } from "react";
 import { BRANDING } from "@/constants/branding";
@@ -128,8 +131,10 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/gate" element={<Gate />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <GlobalGate />
             </SecurityWaitwall>
           </AuthProvider>
         </BrowserRouter>
